@@ -1,0 +1,95 @@
+﻿import sys
+
+css_path = r"E:\New project AI\FocusMode-v3\src\styles.css"
+with open(css_path, "r", encoding="utf-8") as f:
+    content = f.read()
+
+dashboard_css = """
+/* --- Executive Dashboard Styles --- */
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.dashboard-section::-webkit-scrollbar { width: 6px; }
+.dashboard-section::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+.dashboard-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 12px;
+}
+.dashboard-header-bar h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: 0.5px;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+.kpi-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.kpi-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+.kpi-value { font-size: 1.8rem; color: var(--text-main); font-weight: 700; font-family: var(--font-mono); }
+.kpi-trend { font-size: 0.8rem; color: var(--color-green); font-weight: 500; }
+.kpi-trend.negative { color: var(--color-red); }
+
+.dashboard-main-charts {
+  display: flex;
+  width: 100%;
+}
+.chart-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.main-chart { width: 100%; }
+.chart-header h3 { font-size: 1rem; color: var(--text-muted); font-weight: 500; margin-bottom: 15px; }
+
+.dashboard-secondary-charts {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.half-chart { flex: 1; }
+
+.habit-funnel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+.funnel-item {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.03);
+  padding: 10px 15px;
+  border-radius: 6px;
+  align-items: center;
+}
+.funnel-name { font-weight: 500; color: var(--text-main); font-size: 0.9rem; }
+.funnel-streak { font-family: var(--font-mono); color: var(--color-purple); font-weight: bold; font-size: 1.1rem; }
+"""
+
+with open(css_path, "a", encoding="utf-8") as f:
+    f.write(dashboard_css)
+print("Success: Appended dashboard CSS.")

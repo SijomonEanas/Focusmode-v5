@@ -1,0 +1,58 @@
+{
+  "name": "focus-mode-v5",
+  "version": "5.0.0",
+  "description": "FocusMode v5 - Premium focus and task tracking desktop application",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SijomonEanas/Focusmode-v5.git"
+  },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-packager . FocusMode --platform=win32 --arch=x64 --out=dist --icon=src/assets/icon.png --overwrite --ignore=\"^/node_modules$\" --ignore=\"^/dist$\" --ignore=\"^/FocusMode-win32-x64-.*\" --ignore=\"\\.zip$\" --ignore=\"^/test_extract$\"",
+    "release": "electron-builder --win -p always"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "autoprefixer": "^10.5.4",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^31.2.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2",
+    "postcss": "^8.5.19",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.focusmode.app",
+    "productName": "FocusMode",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/icon.png"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ]
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "jsdom": "^29.1.1",
+    "lucide-react": "^1.24.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.14"
+  }
+}

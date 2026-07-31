@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Mode</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Ambient background glow spheres -->
+  <div class="glow-bg">
+    <div class="sphere sphere-1"></div>
+    <div class="sphere sphere-2"></div>
+    <div class="sphere sphere-3"></div>
+  </div>
+
+  <div class="app-window">
+    <!-- Custom Frameless Title Bar -->
+    <header class="title-bar">
+      <div class="title-bar-left">
+        <img src="assets/icon.png" class="title-icon" alt="Focus Mode" onerror="this.style.display='none'">
+        <span class="title-text">Focus Mode <span style="font-size: 11px; font-weight: 500; color: var(--theme-color); opacity: 0.9; margin-left: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">v3.1</span></span>
+        <div id="level-badge" class="level-badge" style="margin-left: 10px; background: linear-gradient(135deg, #a855f7, #3b82f6); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; display: flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(168,85,247,0.3);">
+          ⭐ Lvl <span id="user-level">1</span>
+        </div>
+      </div>
+      <div class="window-controls">
+        <button id="btn-maximize" class="window-control-btn" title="Full Screen Mode">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          </svg>
+        </button>
+        <button id="btn-toggle-widget" class="window-control-btn" title="Toggle Compact Overlay">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <rect x="13" y="13" width="8" height="8" rx="1"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <!-- Left Column: Dashboard, Timer, Habits, Leaderboard, Audio -->
+      <section class="dashboard-section">
+        <!-- Main Timer Card -->
+        <div class="card glass-card timer-card">
+          <!-- Mini Mode Header (Active Task, Complete, Add Task) -->
+          <div class="mini-task-header">
+            <div class="mini-task-left">
+              <span class="mini-task-label">Active Task</span>
+              <select id="mini-task-switcher" class="mini-task-dropdown">
+                <option value="">No Active Task</option>
+              </select>
+            </div>
+            <div class="mini-task-actions">
+              <button id="mini-btn-qty-plus" class="mini-action-btn" style="display: none; font-weight: bold; filter: grayscale(100%);" title="Add +1">+1</button>
+              <button id="mini-btn-complete-task" class="mini-action-btn" title="Complete Active Task">✅</button>
+            </div>
+          </div>
+
+          <div class="mini-main-content-row">
+            <div class="progress-ring-container">
+              <svg class="progress-ring" width="200" height="200">
+                <circle class="progress-ring-bg" stroke="rgba(255, 255, 255, 0.05)" stroke-width="7" fill="transparent" r="88" cx="100" cy="100"/>
+                <circle id="goal-progress-ring" class="progress-ring-fill" stroke="url(#timer-gradient)" stroke-width="7" stroke-dasharray="552.92" stroke-dashoffset="552.92" stroke-linecap="round" fill="transparent" r="88" cx="100" cy="100"/>
+                
+                <circle class="progress-ring-bg" stroke="rgba(255, 255, 255, 0.02)" stroke-width="3" fill="transparent" r="76" cx="100" cy="100"/>
+                <circle id="seconds-progress-ring" class="seconds-ring-fill" stroke="url(#seconds-gradient)" stroke-width="3" stroke-dasharray="477.52" stroke-dashoffset="477.52" stroke-linecap="round" fill="transparent" r="76" cx="100" cy="100"/>
+                <defs>
+                  <linearGradient id="timer-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#a855f7" />
+                    <stop offset="100%" stop-color="#3b82f6" />
+                  </linearGradient>
+                  <linearGradient id="seconds-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ec4899" />
+                    <stop offset="100%" stop-color="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="timer-display">
+                <span id="timer-state-label" class="timer-state">Ready</span>
+                <div class="timer-clock-row">
+                  <span id="timer-time" class="timer-clock">25:00</span>
+                  <button id="mini-timer-play-pause" class="mini-play-btn" title="Start/Pause Timer">
+                    <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  </button>
+                </div>
+                <span id="active-task-display" class="active-task-name">No Active Task</span>
+              </div>
+            </div>
+
+            <!-- Mini Mode inline music control bar -->
+            <div class="mini-music-bar-container">
+              <span id="mini-music-station-title" class="mini-music-title">CodeRadio</span>
+              <div class="mini-music-controls">
+                <button id="mini-btn-music-prev" class="mini-music-btn" title="Previous Music Channel">
+                  <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="5" x2="5" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+                </button>
+                <button id="mini-btn-music-play" class="mini-music-btn" title="Play/Pause Music">
+                  <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+                <button id="mini-btn-music-next" class="mini-music-btn" title="Next Music Channel">
+                  <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="timer-controls">
+              <button id="btn-reset" class="control-btn secondary-btn" title="Restart Session">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </button>
+              <button id="btn-play-pause" class="control-btn primary-btn" title="Start Focus">
+                <svg id="play-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg id="pause-icon" class="hidden" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              </button>
+              <button id="btn-skip" class="control-btn secondary-btn" title="Skip Session">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mini Mode Quote Ticker at the bottom -->
+          <div class="mini-quote-ticker">
+            <span id="mini-quote-text">It is not that we have a short time to live, but that we waste a lot of it.</span>
+          </div>
+        </div>
+
+        <!-- Scrollable Dashboard Content -->
+        <div class="dashboard-scrollable">
+          <!-- Highly Prominent Quote Banner -->
+          <div class="card glass-card quote-banner-card">
+            <span class="quote-mark-start">“</span>
+            <p id="dashboard-quote-text" class="quote-banner-text">Concentrate all your thoughts upon the work at hand. The sun's rays do not burn until brought to a focus.</p>
+            <span id="dashboard-quote-author" class="quote-banner-author">— Alexander Graham Bell</span>
+          </div>
+
+          <!-- Daily Focus & Task Stats Grid -->
+          <div class="stats-grid">
+            <div class="card glass-card stat-card">
+              <span class="stat-label">Daily Goal Focus</span>
+              <div class="stat-value-row">
+                <span id="stat-focus-time" class="stat-value">0h 00m</span>
+                <span id="stat-focus-target" class="stat-sub">/ 8h 00m</span>
+                <span id="leave-reason-display" style="color: var(--theme-color); font-weight: 600; font-size: 0.85rem; margin-left: 10px; display: none; align-self: flex-end; padding-bottom: 4px;"></span>
+              </div>
+              <div class="stat-progress-bar-container">
+                <div id="stat-focus-bar" class="stat-progress-bar" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="card glass-card stat-card">
+              <span class="stat-label">Productivity Rating</span>
+              <div class="stat-value-row">
+                <span id="stat-prod-score" class="stat-value text-purple">100</span>
+                <span class="stat-sub">pts</span>
+              </div>
+              <div class="stat-progress-bar-container">
+                <div id="stat-prod-bar" class="stat-progress-bar" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Habit Tracker Card -->
+          <div class="card glass-card habit-card">
+            <span class="stat-label">Daily Habits</span>
+            <ul id="habit-list" class="habit-list">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+
+          <!-- Focus Music MP3-style Player Card -->
+          <div class="card glass-card music-player-card">
+            <span class="stat-label">Focus MP3 Player</span>
+            <div class="mp3-player-deck">
+              <!-- Rotating vinyl visualizer -->
+              <div class="vinyl-container">
+                <div id="vinyl-disc" class="vinyl-disc">
+                  <div class="vinyl-center"></div>
+                </div>
+                <!-- Pulsing soundwaves -->
+                <div id="wave-visualizer" class="wave-visualizer">
+                  <span class="stroke"></span>
+                  <span class="stroke"></span>
+                  <span class="stroke"></span>
+                  <span class="stroke"></span>
+                  <span class="stroke"></span>
+                </div>
+              </div>
+              
+              <!-- Station details -->
+              <div class="mp3-details">
+                <span id="mp3-station-name" class="mp3-title">CodeRadio (24/7 Lo-Fi)</span>
+                <span id="mp3-station-desc" class="mp3-subtitle">freeCodeCamp Focus Mix</span>
+              </div>
+              
+              <!-- Player controls -->
+              <div class="mp3-controls">
+                <button id="btn-music-prev" class="mp3-btn" title="Previous Channel">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="5" x2="5" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+                </button>
+                <button id="btn-music-play" class="mp3-btn play-btn" title="Play Music">
+                  <svg id="music-play-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <svg id="music-pause-icon" class="hidden" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                </button>
+                <button id="btn-music-next" class="mp3-btn" title="Next Channel">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+                </button>
+                <button id="btn-load-local" class="mp3-btn" title="Open Local MP3 Files">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </button>
+                <button id="btn-music-shuffle" class="mp3-btn" title="Toggle Shuffle">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                </button>
+                <input type="file" id="local-music-picker" accept="audio/*" multiple class="hidden">
+              </div>
+
+              <!-- Stream volume control -->
+              <div class="slider-row" style="margin-top: 10px;">
+                <span class="settings-desc">Volume</span>
+                <input type="range" id="sound-music-volume" class="slider-input" min="0" max="0.5" step="0.05" value="0.15">
+              </div>
+            </div>
+            
+            <!-- MP3 track seeker (scroll progress bar) -->
+            <div class="mp3-seek-bar-container">
+              <span id="music-time-current" class="music-time">0:00</span>
+              <input type="range" id="sound-music-progress" class="slider-input music-progress-slider" min="0" max="100" value="0" disabled>
+              <span id="music-time-total" class="music-time">--:--</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Task Management -->
+      <section class="tasks-section">
+        <!-- Sub-header to Toggle views & add tasks -->
+        <div class="section-header">
+          <div class="view-toggles">
+            <button id="btn-view-tasks" class="view-toggle-btn active">Tasks</button>
+            <button id="btn-view-dashboard" class="view-toggle-btn">Dashboard</button>
+            <button id="btn-view-planner" class="view-toggle-btn">Calendar</button>
+          </div>
+          <div class="header-actions">
+            <!-- Theme button -->
+            <button id="btn-rotate-theme" class="icon-btn" title="Change Theme" style="font-size: 14px;">
+              🎨
+            </button>
+            <!-- Add Task button -->
+            <button id="btn-open-add-task" class="icon-btn add-trigger-btn" title="Add New Task">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <!-- Thought of the Day button -->
+            <button id="btn-thought" class="icon-btn thought-trigger-btn" title="Thought of the Day">
+              💡
+            </button>
+            <!-- AI Report button -->
+            <button id="btn-ai-coach" class="icon-btn coach-trigger-btn" title="AI Coach Report">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/>
+                <path d="M12 8v4"/>
+                <path d="M12 16h.01"/>
+              </svg>
+            </button>
+            <!-- Settings button -->
+            <button id="btn-settings" class="icon-btn" title="Settings">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- TASKS HUB VIEW -->
+        <div id="tasks-view-content" class="view-panel">
+          <!-- Workspace Tabs Filter -->
+          <div class="workspace-tabs">
+            <button class="ws-tab active" data-ws="all">All</button>
+            <button class="ws-tab" data-ws="general">General</button>
+            <button class="ws-tab" data-ws="career">Career</button>
+            <button class="ws-tab" data-ws="learning">Learning</button>
+            <button class="ws-tab" data-ws="personal">Personal</button>
+          </div>
+
+          <!-- Task Lists Container -->
+          <div class="task-lists-scroller">
+            <div class="collapsible-section open" id="pending-section">
+              <button class="collapsible-header" id="btn-toggle-pending">
+                <span class="header-title">Pending Tasks (<span id="count-pending">0</span>)</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="collapsible-content">
+                <ul id="pending-tasks-list" class="task-list"></ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section open" id="completed-section">
+              <button class="collapsible-header" id="btn-toggle-completed">
+                <span class="header-title">Completed Tasks (<span id="count-completed">0</span>)</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="collapsible-content">
+                <div class="completed-actions-row">
+                  <button id="btn-clear-completed" class="text-btn">Clear Completed</button>
+                </div>
+                <ul id="completed-tasks-list" class="task-list completed-list"></ul>
+              </div>
+              <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 11px;">
+                <span id="diagnostic-db-counter">Total DB Tasks: 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Day Review Panel -->
+        <div id="ai-review-card-container" class="card glass-card ai-review-card">
+          <div class="distraction-header" style="justify-content: space-between;">
+            <span class="stat-label">✨ AI Day Review</span>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap;">
+              <button id="btn-activity-log" class="control-btn text-btn-label" style="background: linear-gradient(135deg, #3b82f6, #2dd4bf); color: white; border: none; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; border-radius: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: transform 0.2s;">🕒 Activity Log</button>
+              <button id="btn-generate-ai-review" class="control-btn primary-btn text-btn-label" style="padding: 6px 12px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; border-radius: 8px;">Generate</button>
+            </div>
+          </div>
+          <div id="ai-review-content" class="settings-desc" style="min-height: 60px; margin-top: 10px; color: var(--text-main); font-style: italic;">
+            Ready to analyze your performance. Click Generate!
+          </div>
+        </div>
+
+        <div id="dashboard-section" class="executive-dashboard-view hidden">
+          <div class="dashboard-header-bar">
+            <h2>Monthly Performance (Last 30 Days)</h2>
+            <div class="dashboard-filters">
+              <button class="control-btn" id="btn-refresh-dash">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+          
+          <div class="kpi-grid">
+            <div class="kpi-card"><span class="kpi-title">Total Focus Time</span><span class="kpi-value" id="kpi-focus-time">0h</span><span class="kpi-trend" id="kpi-focus-trend"></span></div>
+            <div class="kpi-card"><span class="kpi-title">Avg Daily Tasks</span><span class="kpi-value" id="kpi-avg-tasks">0</span><span class="kpi-trend" id="kpi-tasks-trend"></span></div>
+            <div class="kpi-card"><span class="kpi-title">Avg Task Rate</span><span class="kpi-value" id="kpi-completion-rate">0%</span><span class="kpi-trend" id="kpi-rate-trend"></span></div>
+            <div class="kpi-card"><span class="kpi-title">Total Distractions</span><span class="kpi-value" id="kpi-distractions">0</span><span class="kpi-trend" id="kpi-distractions-trend"></span></div>
+          </div>
+
+          <div class="chart-container main-chart">
+            <div class="chart-header"><h3>Focus Time & Completion Trends</h3></div>
+            <div class="chart-canvas-wrapper"><canvas id="mainTrendChart"></canvas></div>
+          </div>
+
+          <div class="dashboard-secondary-row">
+
+
+            <div class="chart-container habit-funnel-area">
+              <div class="chart-header"><h3>Habits</h3></div>
+              <div class="habit-funnel-list" id="habit-funnel-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard View Section -->
+      
+
+    </div>
+
+    <!-- Calendar Pop-up Modal Overlay (Spacious 2-column workspace, moved here) -->
+    <div id="calendar-overlay" class="overlay hidden">
+      <div class="glass-card calendar-modal">
+        <div class="modal-header">
+          <h3>Focus Planner & Calendar</h3>
+          <button id="btn-close-calendar" class="icon-btn" title="Close Calendar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body planner-layout">
+          <!-- Left: Calendar Matrix -->
+          <div class="calendar-card">
+            <div class="calendar-header-row">
+              <button id="btn-prev-month" class="month-nav-btn">&lt;</button>
+              <h4 id="calendar-month-year">July 2026</h4>
+              <button id="btn-next-month" class="month-nav-btn">&gt;</button>
+            </div>
+            
+            <div class="calendar-grid-header">
+              <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+            </div>
+            
+            <div id="calendar-days-grid" class="calendar-days-grid">
+              <!-- Populated dynamically via JS -->
+            </div>
+
+            <!-- Calendar Color Key -->
+            <div class="calendar-legend">
+              <div class="legend-item"><span class="legend-dot neutral-dot"></span><span>No tasks</span></div>
+              <div class="legend-item"><span class="legend-dot red-dot"></span><span>&lt;50%</span></div>
+              <div class="legend-item"><span class="legend-dot amber-dot"></span><span>50%</span></div>
+              <div class="legend-item"><span class="legend-dot blue-dot"></span><span>75%</span></div>
+              <div class="legend-item"><span class="legend-dot green-dot"></span><span>100%</span></div>
+              <div class="legend-item"><span class="legend-dot leave-dot"></span><span>Leave</span></div>
+            </div>
+          </div>
+
+          <!-- Right: Selected Day details -->
+          <div class="calendar-detail-card">
+            <div class="calendar-detail-header">
+              <h4 id="selected-day-label">Tuesday, July 14</h4>
+              <span id="selected-day-type-badge" class="badge-count text-purple">Working Day</span>
+            </div>
+            
+            <div class="leave-toggle-container">
+              <button id="btn-toggle-leave" class="control-btn secondary-btn text-btn-label full-width">
+                🏝️ Mark as Leave Day
+              </button>
+                              <div id="leave-reason-container" style="display: none; margin-top: 8px; width: 100%;">
+                  <div id="leave-reason-text-view" style="padding: 8px 12px; background: rgba(0,0,0,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);">
+                    <span id="leave-reason-text-content" style="opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%;">No reason provided</span>
+                    <button id="btn-edit-leave-reason" class="icon-btn" style="padding: 2px;" title="Edit Reason">✏️</button>
+                  </div>
+                  <input type="text" id="leave-reason-input" class="modern-input" placeholder="Reason for leave (Optional)" style="display: none; width: 100%;">
+                </div>
+            </div>
+            
+            <div id="selected-day-stats-container" style="display: flex; gap: 10px; margin-top: 15px; margin-bottom: 10px;">
+              <div class="stat-card" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 8px;">
+                <span class="stat-label" style="font-size: 10px;">Total Focus Time</span>
+                <div id="selected-day-focus-time" style="font-size: 16px; font-weight: 700; color: var(--theme-color); font-family: var(--font-mono); margin-top: 4px;">0h 00m</div>
+              </div>
+              <div class="stat-card" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 8px;">
+                <span class="stat-label" style="font-size: 10px;">Tasks Completed</span>
+                <div id="selected-day-completed-tasks" style="font-size: 16px; font-weight: 700; color: #2ed573; font-family: var(--font-mono); margin-top: 4px;">0</div>
+              </div>
+            </div>
+
+            <div class="selected-day-tasks-section">
+              <span class="stat-label">Scheduled Tasks for this Day</span>
+              <ul id="selected-day-tasks-list" class="task-list planner-tasks-list">
+                <!-- Populated dynamically -->
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What I Learned Pop-up Modal -->
+    <div id="lesson-overlay" class="overlay hidden" style="z-index: 10005;">
+      <div class="glass-card add-task-modal">
+        <div class="modal-header">
+          <h2 style="margin: 0; font-size: 1.25rem;">What did you learn?</h2>
+          <button class="close-btn" onclick="document.getElementById('lesson-overlay').classList.add('hidden')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-group">
+            <label style="color: var(--text-muted); font-size: 0.9rem;">Take a moment to reflect on what you learned or achieved while completing this task.</label>
+            <textarea id="lesson-input" rows="4" style="width: 100%; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; margin-top: 10px; font-family: var(--font-sans);" placeholder="I learned that..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="control-btn" style="background: transparent; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px;" onclick="document.getElementById('lesson-overlay').classList.add('hidden')">Skip</button>
+          <button class="control-btn primary-btn" id="save-lesson-btn" style="padding: 8px 16px; border-radius: 8px;">Save Reflection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Task Pop-up Modal Overlay -->
+    <div id="add-task-overlay" class="overlay hidden">
+      <div class="glass-card add-task-modal">
+        <div class="modal-header">
+          <h3>Create New Task</h3>
+          <button id="btn-close-add-task" class="icon-btn" title="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="add-task-form">
+            <div class="modal-group">
+              <label for="task-name-input">Task Title</label>
+              <input type="text" id="task-name-input" placeholder="What task are we focusing on?" required>
+            </div>
+            
+            <div class="modal-group">
+              <label for="task-workspace-select">Workspace Category</label>
+              <select id="task-workspace-select" class="workspace-dropdown full-width-select">
+                <option value="general">General</option>
+                <option value="career">💼 Career</option>
+                <option value="learning">📚 Learning</option>
+                <option value="personal">🏠 Personal</option>
+              </select>
+            </div>
+
+            <!-- Start Date and End Date Selector -->
+            <div class="modal-group-row">
+              <div class="modal-group half-width">
+                <label for="task-start-date">Start Date</label>
+                <input type="date" id="task-start-date" required>
+              </div>
+              <div class="modal-group half-width">
+                <label for="task-end-date-type">End Date Type</label>
+                <select id="task-end-date-type" class="workspace-dropdown">
+                  <option value="unlimited">♾️ Unlimited</option>
+                  <option value="specific">📅 Specific Date</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="end-date-container" class="modal-group hidden">
+              <label for="task-end-date">End Date</label>
+              <input type="date" id="task-end-date">
+            </div>
+            
+            <div class="modal-group">
+              <label>Tracking Method</label>
+              <div class="task-type-selector">
+                <label class="type-pill active">
+                  <input type="radio" name="task-type" value="checklist" checked>
+                  <span>Checklist</span>
+                </label>
+                <label class="type-pill">
+                  <input type="radio" name="task-type" value="quantity">
+                  <span>Quantity</span>
+                </label>
+                <label class="type-pill">
+                  <input type="radio" name="task-type" value="duration">
+                  <span>Duration</span>
+                </label>
+                <label class="type-pill">
+                  <input type="radio" name="task-type" value="habit">
+                  <span>Daily Habit</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Target inputs based on selector -->
+            <div id="target-quantity-container" class="target-container hidden">
+              <label for="task-target-qty">Target Quantity:</label>
+              <div class="number-input-spinner">
+                <button type="button" class="spinner-btn" onclick="this.nextElementSibling.stepDown()">-</button>
+                <input type="number" id="task-target-qty" value="5" min="1" max="100">
+                <button type="button" class="spinner-btn" onclick="this.previousElementSibling.stepUp()">+</button>
+              </div>
+            </div>
+
+            <div id="target-duration-container" class="target-container hidden">
+              <label for="task-target-duration">Target Duration:</label>
+              <div class="duration-input-group">
+                <input type="number" id="task-target-hours" value="1" min="0" max="24">
+                <span>h</span>
+                <input type="number" id="task-target-minutes" value="0" min="0" max="59">
+                <span>m</span>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btn-cancel-add-task" class="control-btn secondary-btn text-btn-label">Cancel</button>
+          <button type="submit" form="add-task-form" class="control-btn primary-btn submit-task-btn">Create Task</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thought of the Day Overlay Drawer -->
+    <div id="thought-overlay" class="overlay hidden">
+      <div class="glass-card thought-drawer">
+        <div class="thought-header">
+          <h3>Thought of the Day</h3>
+          <button id="btn-close-thought" class="icon-btn" title="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="thought-body">
+          <div class="thought-image-container">
+            <img id="thought-image-display" src="assets/quotes/quote_1.png" alt="Motivational Quote">
+          </div>
+          <p id="thought-image-source-label" class="settings-desc" style="text-align: center; margin-top: 8px;">Loading quote source...</p>
+        </div>
+        <div class="thought-footer">
+          <button id="btn-next-thought" class="control-btn primary-btn full-width">Next Inspiring Thought</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Detail Drawer Overlay -->
+    <div id="task-detail-overlay" class="overlay hidden">
+      <div class="glass-card detail-drawer">
+        <div class="detail-header">
+          <h3 id="detail-task-title">Task Detail</h3>
+          <button id="btn-close-detail" class="icon-btn" title="Close Details">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="detail-body">
+          <div class="detail-group">
+            <label for="detail-task-name">Task Title</label>
+            <input type="text" id="detail-task-name" placeholder="Task name..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; margin-top: 5px;">
+          </div>
+          
+          <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+            <div class="detail-group" style="flex: 1; margin-bottom: 0;">
+              <label for="detail-task-start-date">Start Date</label>
+              <input type="date" id="detail-task-start-date" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; margin-top: 5px; color-scheme: dark;">
+            </div>
+            <div class="detail-group" style="flex: 1; margin-bottom: 0;">
+              <label for="detail-task-end-date">End Date</label>
+              <input type="date" id="detail-task-end-date" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; margin-top: 5px; color-scheme: dark;">
+            </div>
+          </div>
+          
+          <div class="detail-group" id="detail-target-qty-container" style="display: none;">
+            <label for="detail-task-qty">Target Quantity</label>
+            <input type="number" id="detail-task-qty" min="1" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; margin-top: 5px;">
+          </div>
+          
+          <div class="detail-group" id="detail-target-duration-container" style="display: none;">
+            <label>Target Duration (Hours & Minutes)</label>
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+              <input type="number" id="detail-task-hours" min="0" placeholder="Hrs" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white;">
+              <input type="number" id="detail-task-minutes" min="0" max="59" placeholder="Mins" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white;">
+            </div>
+          </div>
+
+          <div class="detail-group">
+            <label for="detail-task-notes">Description / Notes</label>
+            <textarea id="detail-task-notes" placeholder="Write words to learn, notes, or target topics..."></textarea>
+          </div>
+          
+          <div class="detail-group">
+            <label>Plan Weekday</label>
+            <div id="detail-task-days-group" class="day-toggle-group">
+              <input type="checkbox" id="day-mon" value="mon" class="day-toggle-input">
+              <label for="day-mon" class="day-toggle-label">Mon</label>
+
+              <input type="checkbox" id="day-tue" value="tue" class="day-toggle-input">
+              <label for="day-tue" class="day-toggle-label">Tue</label>
+
+              <input type="checkbox" id="day-wed" value="wed" class="day-toggle-input">
+              <label for="day-wed" class="day-toggle-label">Wed</label>
+
+              <input type="checkbox" id="day-thu" value="thu" class="day-toggle-input">
+              <label for="day-thu" class="day-toggle-label">Thu</label>
+
+              <input type="checkbox" id="day-fri" value="fri" class="day-toggle-input">
+              <label for="day-fri" class="day-toggle-label">Fri</label>
+
+              <input type="checkbox" id="day-sat" value="sat" class="day-toggle-input">
+              <label for="day-sat" class="day-toggle-label">Sat</label>
+
+              <input type="checkbox" id="day-sun" value="sun" class="day-toggle-input">
+              <label for="day-sun" class="day-toggle-label">Sun</label>
+            </div>
+          </div>
+
+          <div class="detail-group">
+            <label>Sub-tasks Checklist</label>
+            <ul id="detail-subtask-list" class="subtask-list">
+              <!-- Dynamically populated -->
+            </ul>
+            <form id="add-subtask-form" class="subtask-form">
+              <input type="text" id="subtask-input" placeholder="Add sub-task..." required>
+              <button type="submit" class="subtask-add-btn">+</button>
+            </form>
+          </div>
+          
+          <div class="detail-group">
+            <label style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Historical Performance</span>
+              <span style="font-size: 10px; color: var(--theme-color); opacity: 0.8; cursor: help;" title="Shows your daily progress on this specific task since it was created.">Info</span>
+            </label>
+            <ul id="detail-history-list" class="task-history-list" style="margin-top: 10px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px;">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+        </div>
+        <div class="detail-footer">
+          <button id="btn-save-detail" class="control-btn primary-btn full-width">Save Details</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Log Modal (Ultra-Premium Redesign) -->
+    <div id="activity-log-overlay" class="overlay hidden">
+      <div class="modal-content glass-card" style="max-width: 640px; width: 95%; height: 94vh; max-height: 96vh; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.12); border-top: 2px solid var(--theme-color); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(59, 130, 246, 0.15); padding: 20px; margin: 2vh auto;">
+        
+        <!-- Header Section -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; color: var(--theme-color);">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div>
+              <h2 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #fff; letter-spacing: 0.3px;">Activity History</h2>
+              <span id="history-total-count" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Audit log feed</span>
+            </div>
+          </div>
+          
+          <button id="btn-close-activity-log" class="premium-close-btn" title="Close" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.2s;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <!-- Controls Bar: Prev/Next & Select Date -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 0 10px 0; gap: 10px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button id="btn-activity-prev" title="Previous Day" style="padding: 6px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>Prev</span>
+            </button>
+            <button id="btn-activity-next" title="Next Day" style="padding: 6px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
+              <span>Next</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+          
+          <div style="flex: 1; min-width: 200px; display: flex; justify-content: flex-end;">
+            <select id="activity-date-select" style="background: rgba(0,0,0,0.6); color: var(--theme-color); border: 1px solid rgba(255,255,255,0.18); padding: 7px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; outline: none; width: 100%; max-width: 260px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);">
+              <option value="0">📅 Today</option>
+              <option value="1">📅 Yesterday</option>
+              <option value="all">📁 All History</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filter Pill Bar -->
+        <div style="display: flex; align-items: center; gap: 8px; padding-bottom: 12px; overflow-x: auto; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <button class="history-filter-pill active" data-filter="all">All</button>
+          <button class="history-filter-pill" data-filter="task">⚡ Tasks</button>
+          <button class="history-filter-pill" data-filter="reflection">💡 Reflections</button>
+          <button class="history-filter-pill" data-filter="timer">⏱️ Timers</button>
+          <button class="history-filter-pill" data-filter="habit">🔥 Habits</button>
+          <button class="history-filter-pill" data-filter="system">⚙️ System</button>
+        </div>
+
+        <!-- Activity Timeline Cards Body -->
+        <div class="history-modal-body" style="flex: 1; overflow-y: auto; padding-top: 14px; padding-right: 4px;">
+          <div id="activity-log-list" style="display: flex; flex-direction: column;">
+            <!-- Premium History Cards will be generated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Coaching Report Drawer Overlay -->
+    <div id="ai-report-overlay" class="overlay hidden">
+      <div class="ai-report-drawer" style="width: 500px; max-width: 90vw;">
+        <div class="report-header">
+          <h3>Daily AI Coach Report</h3>
+          <button id="btn-close-report" class="icon-btn" title="Close Report">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="report-loading-container" class="report-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px;">
+          <div class="ai-spinner"></div>
+          <p style="color: var(--text-muted); margin-top: 15px; font-weight: 500;">AI Coach is analyzing your data...</p>
+        </div>
+
+        <!-- Report Content -->
+        <div id="report-content-container" class="report-body hidden" style="overflow-y: auto; flex: 1; padding-right: 10px;">
+          <div class="report-score-box" style="margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.05);">
+            <span class="report-score-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 8px;">Productivity Index</span>
+            <div class="report-score-row" style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
+              <span id="report-score-val" class="score-val" style="font-size: 3.5rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-main); line-height: 1;">--</span>
+              <span class="score-max" style="font-size: 1.1rem; color: var(--text-muted); opacity: 0.5;">/100</span>
+            </div>
+            <span id="report-grade-label" class="report-grade" style="margin-top: 8px; font-weight: 700; font-size: 0.95rem; color: var(--theme-color);">...</span>
+          </div>
+          
+          <div class="report-section">
+            <h4 class="report-section-title">📊 Daily Summary</h4>
+            <div id="report-summary" class="report-text"></div>
+          </div>
+          
+          <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <div class="report-section" style="flex: 1; margin-bottom: 0;">
+              <h4 class="report-section-title" style="color: var(--color-green);">🟢 Strengths</h4>
+              <ul id="report-strengths" class="report-list"></ul>
+            </div>
+            <div class="report-section" style="flex: 1; margin-bottom: 0;">
+              <h4 class="report-section-title" style="color: var(--color-red);">🔴 Weaknesses</h4>
+              <ul id="report-weaknesses" class="report-list"></ul>
+            </div>
+          </div>
+
+          <div class="report-section">
+            <h4 class="report-section-title">🔍 Pattern Insights</h4>
+            <ul id="report-insights" class="report-list"></ul>
+          </div>
+          
+          <div class="report-section">
+            <h4 class="report-section-title">💡 Recommendations</h4>
+            <ul id="report-recommendations" class="report-list"></ul>
+          </div>
+
+          <div class="report-section">
+            <h4 class="report-section-title">🌅 Tomorrow's Plan</h4>
+            <div id="report-tomorrow" class="report-text"></div>
+          </div>
+        </div>
+        
+        <div class="report-footer" style="margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);">
+          <button id="btn-share-report" class="hidden" style="width: 100%; padding: 14px; background: var(--gradient-focus); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease;">Acknowledge Coach Advice</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Overlay Drawer -->
+    <div id="settings-overlay" class="overlay hidden">
+      <div class="glass-card settings-drawer">
+        <div class="settings-header">
+          <h3>Settings</h3>
+          <button id="btn-close-settings" class="icon-btn" title="Close Settings">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="settings-body">
+          <div class="settings-group">
+            <label class="settings-toggle-label">
+              <span>Start on System Boot</span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="setting-autostart">
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+            <p class="settings-desc">Launch Focus Mode automatically when you start your computer.</p>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-toggle-label">
+              <span>Desktop Notifications</span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="setting-notifications" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+            <p class="settings-desc">Receive notifications when your work sessions or breaks complete.</p>
+          </div>
+
+          <!-- Custom Reset Hour Boundary -->
+          <div class="settings-group">
+            <label for="setting-day-reset">New Day Resets At</label>
+            <div class="duration-input-group margin-top-xs">
+              <input type="number" id="setting-day-reset-hour" value="5" min="0" max="23">
+              <span>:00 AM/PM</span>
+            </div>
+            <p class="settings-desc">Your daily statistics will reset at this hour instead of midnight (ideal for night-shift/late workers).</p>
+          </div>
+
+
+
+          <div class="settings-group">
+            <label>Session Timers (Minutes)</label>
+            <div class="timers-config-row">
+              <div class="timer-config-item">
+                <span class="config-label">Focus</span>
+                <input type="number" id="setting-focus-duration" value="25" min="1" max="180">
+              </div>
+              <div class="timer-config-item">
+                <span class="config-label">Short Break</span>
+                <input type="number" id="setting-short-break" value="5" min="1" max="60">
+              </div>
+              <div class="timer-config-item">
+                <span class="config-label">Long Break</span>
+                <input type="number" id="setting-long-break" value="15" min="1" max="120">
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="sound-preview-row">
+              <span>Notification Volume</span>
+              <button id="btn-preview-sound" class="btn text-btn">Test Chime</button>
+            </div>
+            <input type="range" id="setting-sound-volume" class="slider-input" min="0" max="1" step="0.1" value="0.5">
+          </div>
+        </div>
+          <div class="settings-group" style="margin-top: 20px;">
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-export-data" class="control-btn" style="flex:1; background: rgba(255,255,255,0.05); color: #fff;">Export Backup (.json)</button>
+              <button id="btn-import-data" class="control-btn" style="flex:1; background: rgba(255,255,255,0.05); color: #fff;">Import Backup</button>
+              <input type="file" id="input-import-data" style="display: none;" accept=".json">
+            </div>
+          </div>
+
+        <div class="settings-footer">
+          <button id="btn-save-settings" class="control-btn primary-btn full-width">Apply Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HTML5 Audio Element for Focus Music Streaming -->
+  <audio id="bg-music-player"></audio>
+
+
+    <!-- Habit Tracker Pop-up Modal Overlay -->
+    <div id="habit-overlay" class="overlay hidden">
+      <div class="glass-card calendar-modal" style="width: 95%; max-width: 1400px; height: 90vh;">
+        <div class="modal-header">
+          <h3>📊 Monthly Habit Tracker</h3>
+          <button id="btn-close-habits" class="icon-btn" title="Close Habits">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="flex-direction: column; overflow-y: auto;">
+          <div class="theme-switcher" style="display: flex; justify-content: center; margin-bottom: 15px;">
+            <button id="btn-rotate-theme" class="control-btn secondary-btn text-btn-label">🎨 Change Theme</button>
+          </div>
+          <div class="add-habit-form" style="display: flex; gap: 8px; justify-content: center; margin-bottom: 15px;">
+            <input id="newHabitInput" class="glass-input" placeholder="New habit name" style="width: 200px;" type="text"/>
+            <select id="habitTypeSelect" class="glass-input" onchange="toggleMaxInputs()">
+              <option value="tick">✓ Tick</option>
+              <option value="time">🕐 Time</option>
+              <option value="count">#️⃣ Count</option>
+            </select>
+            <input id="maxCountInput" class="glass-input" max="100" min="1" placeholder="Max count" style="width: 100px; display: none;" type="number" value="10"/>
+            <div id="timeInputContainer" style="display: none; gap: 4px; align-items: center;">
+              <input id="maxTimeHours" class="glass-input" max="24" min="0" placeholder="Hours" style="width: 70px;" type="number" value="1"/>
+              <span>:</span>
+              <input id="maxTimeMinutes" class="glass-input" max="59" min="0" placeholder="Mins" style="width: 70px;" type="number" value="0"/>
+            </div>
+            <button id="btn-add-grid-habit" class="control-btn primary-btn text-btn-label">➕ Add Habit</button>
+          </div>
+          <div class="month-selector" style="display: flex; gap: 12px; justify-content: center; margin-bottom: 20px;">
+            <select id="habitMonthSelect" class="glass-input">
+              <option value="0">January</option>
+              <option value="1">February</option>
+              <option value="2">March</option>
+              <option value="3">April</option>
+              <option value="4">May</option>
+              <option value="5">June</option>
+              <option value="6">July</option>
+              <option value="7">August</option>
+              <option value="8">September</option>
+              <option value="9">October</option>
+              <option value="10">November</option>
+              <option value="11">December</option>
+            </select>
+            <select id="habitYearSelect" class="glass-input"></select>
+          </div>
+          
+          <div class="tracker-wrapper" style="overflow-x: auto; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px;">
+            <table class="tracker-table" id="trackerTable" style="width: 100%; min-width: 1200px; border-collapse: collapse;">
+              <thead>
+                <tr id="habitHeaderRow"></tr>
+              </thead>
+              <tbody id="habitTrackerBody"></tbody>
+            </table>
+          </div>
+          
+          <div class="stats" style="display: flex; gap: 16px; justify-content: center; margin-top: 20px;">
+            <div class="card stat-card glass-card">
+              <h3 style="font-size: 12px; color: var(--text-muted);">Total Completions</h3>
+              <p id="totalCompletions" style="font-size: 24px; color: var(--accent-main); font-weight: bold;">0</p>
+            </div>
+            <div class="card stat-card glass-card">
+              <h3 style="font-size: 12px; color: var(--text-muted);">Completion Rate</h3>
+              <p id="completionRate" style="font-size: 24px; color: var(--accent-main); font-weight: bold;">0%</p>
+            </div>
+            <div class="card stat-card glass-card">
+              <h3 style="font-size: 12px; color: var(--text-muted);">Best Habit</h3>
+              <p id="bestHabit" style="font-size: 16px; color: var(--accent-main); font-weight: bold;">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Screensaver Overlay -->
+    <div id="screensaver-overlay" class="overlay hidden" style="background: black; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; cursor: pointer; overflow: hidden;">
+      <img id="screensaver-bg" src="assets/quotes/quote_1.png" style="position: absolute; width: 110vw; height: 110vh; top: -5vh; left: -5vw; object-fit: cover; filter: blur(30px) brightness(0.6); transition: opacity 2s ease-in-out; opacity: 0; z-index: -1;">
+      <img id="screensaver-image" src="assets/quotes/quote_1.png" style="width: 100vw; height: 100vh; transition: opacity 2s ease-in-out; opacity: 0; object-fit: contain; box-shadow: 0 0 50px rgba(0,0,0,0.9);">
+    </div>
+    <script src="app.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist2/
+FocusMode-win32-x64/
+.DS_Store
+*.log
+*.tmp
+electron_debug_log.txt
