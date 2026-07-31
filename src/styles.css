@@ -4,8 +4,9 @@
   --bg-primary: #0a0712;
   --panel-bg: rgba(14, 11, 26, 0.75);
   --card-bg: rgba(255, 255, 255, 0.035);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-focus: rgba(168, 85, 247, 0.4);
+  --theme-color: #a855f7;
+  --card-border: rgba(168, 85, 247, 0.35);
+  --card-border-focus: rgba(168, 85, 247, 0.6);
   
   --text-main: #f3f1f8;
   --text-muted: #9f9cb0;
@@ -3134,35 +3135,45 @@ body[data-neon-theme="blue"] {
   --color-purple: #3b82f6;
   --color-blue: #0ea5e9;
   --gradient-focus: linear-gradient(135deg, #3b82f6, #0ea5e9);
-  --card-border-focus: rgba(59, 130, 246, 0.4);
+  --card-border: rgba(59, 130, 246, 0.4);
+  --card-border-focus: rgba(59, 130, 246, 0.65);
+  --theme-color: #3b82f6;
 }
 
 body[data-neon-theme="green"] {
   --color-purple: #10b981;
   --color-blue: #059669;
   --gradient-focus: linear-gradient(135deg, #10b981, #059669);
-  --card-border-focus: rgba(16, 185, 129, 0.4);
+  --card-border: rgba(16, 185, 129, 0.4);
+  --card-border-focus: rgba(16, 185, 129, 0.65);
+  --theme-color: #10b981;
 }
 
 body[data-neon-theme="pink"] {
   --color-purple: #ec4899;
   --color-blue: #db2777;
   --gradient-focus: linear-gradient(135deg, #ec4899, #db2777);
-  --card-border-focus: rgba(236, 72, 153, 0.4);
+  --card-border: rgba(236, 72, 153, 0.4);
+  --card-border-focus: rgba(236, 72, 153, 0.65);
+  --theme-color: #ec4899;
 }
 
 body[data-neon-theme="orange"] {
   --color-purple: #f97316;
   --color-blue: #ea580c;
   --gradient-focus: linear-gradient(135deg, #f97316, #ea580c);
-  --card-border-focus: rgba(249, 115, 22, 0.4);
+  --card-border: rgba(249, 115, 22, 0.4);
+  --card-border-focus: rgba(249, 115, 22, 0.65);
+  --theme-color: #f97316;
 }
 
 body[data-neon-theme="purple"] {
   --color-purple: #a855f7;
   --color-blue: #3b82f6;
   --gradient-focus: linear-gradient(135deg, #a855f7, #3b82f6);
-  --card-border-focus: rgba(168, 85, 247, 0.4);
+  --card-border: rgba(168, 85, 247, 0.4);
+  --card-border-focus: rgba(168, 85, 247, 0.65);
+  --theme-color: #a855f7;
 }
 
 /* --- AI Day Review Styles --- */
@@ -3566,6 +3577,31 @@ body[data-neon-theme="purple"] {
 .card-purple .history-tag { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
 .history-time-stamp { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
 .history-msg-text { font-size: 0.8rem; font-weight: 500; color: #f8fafc; line-height: 1.25; }
+
+/* --- Theme Color Grid & Card Border Styling --- */
+.glass-panel,
+.timer-container,
+.card,
+.stat-card,
+.habit-card,
+.task-card,
+.mp3-container,
+.ai-review-card,
+.executive-dashboard-view,
+.modal-content,
+.quote-box,
+.settings-card,
+.dashboard-card,
+.calendar-day-cell,
+.history-modal-body,
+.daily-goal-card,
+.productivity-card,
+.habits-section,
+.tasks-panel,
+.dashboard-section-card {
+  border-color: var(--card-border) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 0 0 1px var(--card-border) !important;
+}
 
 /* Height fix for Activity History modal */
 #activity-log-overlay .modal-content { max-width: 640px !important; width: 95% !important; height: 94vh !important; max-height: 96vh !important; display: flex !important; flex-direction: column !important; }
