@@ -520,10 +520,19 @@ function performDayRollover(oldDateStr, newDateStr) {
 }
 
 // --- Theming Engine ---
-const neonThemes = ['blue', 'green', 'pink', 'orange', 'purple'];
+const neonThemes = ['purple', 'blue', 'green', 'pink', 'orange'];
+const neonHexColors = {
+  purple: '#a855f7',
+  blue: '#3b82f6',
+  green: '#10b981',
+  pink: '#ec4899',
+  orange: '#f97316'
+};
 function applyNeonTheme(index) {
   const theme = neonThemes[index % neonThemes.length];
   document.body.setAttribute('data-neon-theme', theme);
+  const mainColor = neonHexColors[theme] || '#a855f7';
+  document.documentElement.style.setProperty('--theme-color', mainColor);
 }
 
 const elBtnRotateTheme = document.getElementById('btn-rotate-theme');
