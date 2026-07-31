@@ -889,15 +889,15 @@ body {
 
 .view-toggles {
   display: flex;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.3);
   padding: 3px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  border: 1.5px solid var(--color-purple) !important;
 }
 
 .view-toggle-btn {
   background: transparent;
-  border: none;
+  border: 1.5px solid transparent;
   padding: 6px 16px;
   border-radius: 8px;
   color: var(--text-muted);
@@ -909,9 +909,10 @@ body {
 }
 
 .view-toggle-btn.active {
-  background: rgba(255, 255, 255, 0.06);
-  color: white;
-  box-shadow: var(--shadow-sm);
+  background: var(--color-purple) !important;
+  color: #ffffff !important;
+  border: 1.5px solid var(--color-purple) !important;
+  box-shadow: 0 0 14px var(--color-purple) !important;
 }
 
 .header-actions {
@@ -919,26 +920,31 @@ body {
   gap: 8px;
 }
 
-.add-trigger-btn {
-  background: rgba(168, 85, 247, 0.08) !important;
+.header-actions button,
+.icon-btn,
+.add-trigger-btn,
+.coach-trigger-btn,
+.thought-trigger-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
   color: white !important;
-  border-color: rgba(168, 85, 247, 0.25) !important;
+  border: 1.5px solid var(--color-purple) !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: var(--transition-fast) !important;
 }
 
-.add-trigger-btn:hover {
-  background: var(--gradient-focus) !important;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35) !important;
-}
-
-.coach-trigger-btn {
-  color: var(--color-purple) !important;
-  background: rgba(168, 85, 247, 0.05) !important;
-  border-color: rgba(168, 85, 247, 0.15) !important;
-}
-
-.coach-trigger-btn:hover {
-  background: rgba(168, 85, 247, 0.12) !important;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+.header-actions button:hover,
+.icon-btn:hover,
+.header-actions button.active,
+.icon-btn.active {
+  background: var(--color-purple) !important;
+  color: white !important;
+  border-color: var(--color-purple) !important;
+  box-shadow: 0 0 14px var(--color-purple) !important;
 }
 
 .view-panel {
@@ -1218,28 +1224,31 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .ws-tab {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--card-border);
-  padding: 5px 12px;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid var(--color-purple) !important;
+  padding: 6px 16px;
+  border-radius: 20px;
   color: var(--text-muted);
   font-family: var(--font-sans);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition: var(--transition-fast);
 }
 
 .ws-tab:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-purple) !important;
+  color: white;
 }
 
 .ws-tab.active {
-  background: rgba(168, 85, 247, 0.1);
-  border-color: var(--color-purple);
-  color: white;
+  background: var(--color-purple) !important;
+  border: 1.5px solid var(--color-purple) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 14px var(--color-purple) !important;
 }
 
 /* Task Scroller list styling */
@@ -3550,9 +3559,9 @@ body[data-neon-theme="purple"], body:not([data-neon-theme]) {
 .history-modal-body::-webkit-scrollbar-track { background: transparent; }
 .history-modal-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
 .history-modal-body::-webkit-scrollbar-thumb:hover { background: var(--theme-color); }
-.history-filter-pill { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; }
-.history-filter-pill:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
-.history-filter-pill.active { background: var(--theme-color); color: #fff; border-color: var(--theme-color); box-shadow: 0 0 10px var(--theme-color); }
+.history-filter-pill { background: rgba(255, 255, 255, 0.05); border: 1.5px solid var(--color-purple) !important; color: var(--text-muted); padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; }
+.history-filter-pill:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: var(--color-purple) !important; }
+.history-filter-pill.active { background: var(--color-purple) !important; color: #fff !important; border: 1.5px solid var(--color-purple) !important; box-shadow: 0 0 12px var(--color-purple) !important; }
 .history-date-header { display: flex; align-items: center; justify-content: center; margin: 16px 0 10px 0; font-size: 0.75rem; font-weight: 700; color: var(--theme-color); letter-spacing: 1.5px; text-transform: uppercase; }
 .history-date-header::before, .history-date-header::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); margin: 0 10px; }
 .premium-history-card { position: relative; background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 9px 12px; margin-bottom: 7px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
