@@ -3570,3 +3570,27 @@ body[data-neon-theme="purple"] {
 /* Height fix for Activity History modal */
 #activity-log-overlay .modal-content { max-width: 640px !important; width: 95% !important; height: 94vh !important; max-height: 96vh !important; display: flex !important; flex-direction: column !important; }
 .history-modal-body { flex: 1 !important; height: 100% !important; min-height: 0 !important; overflow-y: auto !important; }
+
+/* --- All Headings & Section Titles Theme Color Styling --- */
+h1, h2, h3, h4, h5, h6,
+.stat-label,
+.header-title,
+.mini-task-label,
+.timer-state,
+.report-section-title,
+.history-date-header,
+.settings-title,
+.modal-title,
+.section-title,
+.kpi-title,
+.chart-header h3,
+.dashboard-header-bar h2,
+.modal-header h3,
+.detail-header h3,
+.report-header h3,
+.settings-header h3,
+.thought-header h3,
+.collapsible-header .header-title {
+  color: var(--color-purple) !important;
+  font-weight: 700 !important;
+}
