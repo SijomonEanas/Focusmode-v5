@@ -3578,18 +3578,36 @@ body[data-neon-theme="purple"], body:not([data-neon-theme]) {
 .history-time-stamp { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
 .history-msg-text { font-size: 0.8rem; font-weight: 500; color: #f8fafc; line-height: 1.25; }
 
-/* --- Theme Color Grid & Card Border Styling --- */
-.glass-panel,
-.timer-container,
+/* --- Universal Theme Color Border System --- */
+.app-window,
+.title-bar,
 .card,
+.glass-card,
+.timer-card,
+.quote-banner-card,
 .stat-card,
 .habit-card,
-.task-card,
-.mp3-container,
-.ai-review-card,
+.music-player-card,
+.dashboard-section,
+.tasks-panel,
+.mini-main-content-row,
+.stats-grid,
+.mp3-player-deck,
+.progress-ring-container,
+.mini-task-header,
+.glass-panel,
 .executive-dashboard-view,
+.ai-review-card,
 .modal-content,
-.quote-box,
+.filter-pill,
+.tab-btn,
+.control-btn,
+.action-btn,
+.mini-action-btn,
+.habit-item,
+.task-item,
+.input-field,
+.select-field,
 .settings-card,
 .dashboard-card,
 .calendar-day-cell,
@@ -3597,10 +3615,19 @@ body[data-neon-theme="purple"], body:not([data-neon-theme]) {
 .daily-goal-card,
 .productivity-card,
 .habits-section,
-.tasks-panel,
 .dashboard-section-card {
   border-color: var(--card-border) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 0 0 1px var(--card-border) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 0 0 1px var(--card-border) !important;
+}
+
+.card:hover,
+.glass-card:hover,
+.stat-card:hover,
+.habit-card:hover,
+.music-player-card:hover,
+.ai-review-card:hover {
+  border-color: var(--card-border-focus) !important;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4), 0 0 15px var(--card-border) !important;
 }
 
 /* Height fix for Activity History modal */
