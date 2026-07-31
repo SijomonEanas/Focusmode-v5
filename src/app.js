@@ -1103,16 +1103,15 @@ function getTaskSeconds(task) {
   return secs;
 }
 
-function getDynamicGoalSecs() {
+function getTodayGoalSeconds() {
   const today = new Date();
   const weekdays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   const todayWeekday = weekdays[today.getDay()];
   
   const activeTodayTasks = appState.tasks.filter(t => {
-    const wsMatch = activeWorkspace === 'all' || t.workspace === activeWorkspace;
     const activeDate = isTaskActiveOnDate(t, today);
     const dayMatch = taskMatchesDay(t, todayWeekday);
-    return wsMatch && activeDate && dayMatch;
+    return activeDate && dayMatch;
   });
 
   let totalScheduledSecs = 0;
@@ -1132,26 +1131,26 @@ function calculateProductivityScore() {
   const todayWeekday = weekdays[today.getDay()];
   
   const activeTodayTasks = appState.tasks.filter(t => {
-    const wsMatch = activeWorkspace === 'all' || t.workspace === activeWorkspace;
     const activeDate = isTaskActiveOnDate(t, today);
     const dayMatch = taskMatchesDay(t, todayWeekday);
-    return wsMatch && activeDate && dayMatch;
+    return activeDate && dayMatch;
   });
 
   let totalItems = 0;
   let completedItems = 0;
-
+  
   activeTodayTasks.forEach(t => {
-    // Only count quantity tasks as top-level items
+    const target = t.targetQty || 1;
     if (t.type === 'quantity') {
-      const todayStr = today.toDateString();
-      const target = typeof getEffectiveTaskTarget === 'function' ? getEffectiveTaskTarget(t, todayStr) : (t.targetQty > 0 ? t.targetQty : 1);
       totalItems += target;
       completedItems += t.currentQty || 0;
       
       if (t.completed && (t.currentQty || 0) < target) {
         completedItems += (target - (t.currentQty || 0));
       }
+    } else {
+      totalItems++;
+      if (t.completed) completedItems++;
     }
     // Always count subtasks/checklist items
     if (t.subtasks && t.subtasks.length > 0) {
@@ -1196,10 +1195,9 @@ function renderStats() {
   const todayWeekday = weekdays[today.getDay()];
   
   const activeTodayTasks = appState.tasks.filter(t => {
-    const wsMatch = activeWorkspace === 'all' || t.workspace === activeWorkspace;
     const activeDate = isTaskActiveOnDate(t, today);
     const dayMatch = taskMatchesDay(t, todayWeekday);
-    return wsMatch && activeDate && dayMatch;
+    return activeDate && dayMatch;
   });
 
   let totalScheduledSecs = 0;
