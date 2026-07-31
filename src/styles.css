@@ -219,10 +219,10 @@ body {
 /* --- Common Card Styling --- */
 .card {
   background: var(--card-bg);
-  border: 1px solid var(--card-border);
+  border: 1.5px solid var(--color-purple);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 0 12px var(--card-border);
   transition: var(--transition-smooth);
 }
 
@@ -231,8 +231,9 @@ body {
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--color-purple);
   background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 18px var(--card-border);
 }
 
 /* --- Left Column: Dashboard & Scrollable Card stack --- */
@@ -242,7 +243,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: 1.5px solid var(--color-purple);
   overflow: hidden;
   min-height: 0; /* Force column to respect app viewport bounds */
 }
