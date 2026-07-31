@@ -3578,9 +3578,7 @@ body[data-neon-theme="purple"], body:not([data-neon-theme]) {
 .history-time-stamp { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
 .history-msg-text { font-size: 0.8rem; font-weight: 500; color: #f8fafc; line-height: 1.25; }
 
-/* --- Universal Theme Color Border System --- */
-.app-window,
-.title-bar,
+/* --- Solid High-Contrast Theme Color Border System --- */
 .card,
 .glass-card,
 .timer-card,
@@ -3589,7 +3587,7 @@ body[data-neon-theme="purple"], body:not([data-neon-theme]) {
 .habit-card,
 .music-player-card,
 .dashboard-section,
-.tasks-panel,
+.tasks-section,
 .mini-main-content-row,
 .stats-grid,
 .mp3-player-deck,
@@ -3615,9 +3613,11 @@ body[data-neon-theme="purple"], body:not([data-neon-theme]) {
 .daily-goal-card,
 .productivity-card,
 .habits-section,
-.dashboard-section-card {
-  border-color: var(--card-border) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 0 0 1px var(--card-border) !important;
+.dashboard-section-card,
+.collapsible-section,
+.app-window {
+  border: 1.5px solid var(--color-purple) !important;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.4), 0 0 8px var(--card-border) !important;
 }
 
 .card:hover,
@@ -3626,8 +3626,8 @@ body[data-neon-theme="purple"], body:not([data-neon-theme]) {
 .habit-card:hover,
 .music-player-card:hover,
 .ai-review-card:hover {
-  border-color: var(--card-border-focus) !important;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4), 0 0 15px var(--card-border) !important;
+  border-color: var(--color-purple) !important;
+  box-shadow: 0 0 20px var(--card-border) !important;
 }
 
 /* Height fix for Activity History modal */
