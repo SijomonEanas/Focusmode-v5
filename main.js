@@ -379,14 +379,31 @@ function collectImages(dir, depth = 0) {
   return images;
 }
 
+function getUserQuotesDirectories() {
+  const dirs = [];
+  const exeDir = path.dirname(app.getPath('exe'));
+  const portableQuotesDir = path.join(exeDir, 'user-quotes');
+  dirs.push(portableQuotesDir);
+
+  const cwdQuotesDir = path.join(process.cwd(), 'user-quotes');
+  if (!dirs.includes(cwdQuotesDir)) dirs.push(cwdQuotesDir);
+
+  const appDataQuotesDir = path.join(app.getPath('userData'), 'user-quotes');
+  if (!dirs.includes(appDataQuotesDir)) dirs.push(appDataQuotesDir);
+
+  return dirs;
+}
+
 ipcMain.handle('get-random-quote-image', () => {
   try {
-    const userQuotesDir = path.join(app.getPath('userData'), 'user-quotes');
-    if (!fs.existsSync(userQuotesDir)) {
-      fs.mkdirSync(userQuotesDir, { recursive: true });
-    }
-
-    const imagePaths = collectImages(userQuotesDir);
+    const dirs = getUserQuotesDirectories();
+    let imagePaths = [];
+    
+    dirs.forEach(dir => {
+      if (fs.existsSync(dir)) {
+        imagePaths = imagePaths.concat(collectImages(dir));
+      }
+    });
 
     if (imagePaths.length > 0) {
       const randomPath = imagePaths[Math.floor(Math.random() * imagePaths.length)];
@@ -407,13 +424,30 @@ ipcMain.handle('get-random-quote-image', () => {
 });
 
 ipcMain.handle('open-user-quotes-folder', async () => {
-  const userQuotesDir = path.join(app.getPath('userData'), 'user-quotes');
-  if (!fs.existsSync(userQuotesDir)) {
-    fs.mkdirSync(userQuotesDir, { recursive: true });
+  const exeDir = path.dirname(app.getPath('exe'));
+  let targetDir = path.join(exeDir, 'user-quotes');
+  
+  try {
+    if (!fs.existsSync(targetDir)) {
+      try {
+        fs.mkdirSync(targetDir, { recursive: true });
+      } catch (e) {
+        targetDir = path.join(app.getPath('userData'), 'user-quotes');
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+      }
+    }
+  } catch (err) {
+    targetDir = path.join(app.getPath('userData'), 'user-quotes');
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
   }
+
   const { shell } = require('electron');
-  await shell.openPath(userQuotesDir);
-  return userQuotesDir;
+  await shell.openPath(targetDir);
+  return targetDir;
 });
 
 ipcMain.on('send-notification', (event, { title, body }) => {
