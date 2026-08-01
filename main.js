@@ -406,6 +406,16 @@ ipcMain.handle('get-random-quote-image', () => {
   return { source: 'bundled', index: Math.floor(Math.random() * 3) + 1 };
 });
 
+ipcMain.handle('open-user-quotes-folder', async () => {
+  const userQuotesDir = path.join(app.getPath('userData'), 'user-quotes');
+  if (!fs.existsSync(userQuotesDir)) {
+    fs.mkdirSync(userQuotesDir, { recursive: true });
+  }
+  const { shell } = require('electron');
+  await shell.openPath(userQuotesDir);
+  return userQuotesDir;
+});
+
 ipcMain.on('send-notification', (event, { title, body }) => {
   if (Notification.isSupported()) {
     new Notification({ title, body }).show();

@@ -369,6 +369,17 @@ function initAudioContext() {
 const elBtnExportData = document.getElementById('btn-export-data');
 const elBtnImportData = document.getElementById('btn-import-data');
 const elInputImportData = document.getElementById('input-import-data');
+const elBtnOpenScreensaverFolder = document.getElementById('btn-open-screensaver-folder');
+
+if (elBtnOpenScreensaverFolder) {
+  elBtnOpenScreensaverFolder.addEventListener('click', async () => {
+    playChime('click');
+    if (window.electronAPI && window.electronAPI.openUserQuotesFolder) {
+      await window.electronAPI.openUserQuotesFolder();
+      showToast('Screensaver Folder', 'Opened screensaver image folder!');
+    }
+  });
+}
 
 if (elBtnExportData) {
   elBtnExportData.addEventListener('click', () => {

@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAutostart: () => ipcRenderer.invoke('get-autostart'),
   setAutostart: (enable) => ipcRenderer.invoke('set-autostart', enable),
   getRandomQuoteImage: () => ipcRenderer.invoke('get-random-quote-image'),
+  openUserQuotesFolder: () => ipcRenderer.invoke('open-user-quotes-folder'),
   sendNotification: (notificationData) => ipcRenderer.send('send-notification', notificationData),
 
   // --- Dual-Window State Synchronization ---
