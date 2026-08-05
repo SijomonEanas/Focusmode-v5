@@ -262,15 +262,15 @@ ipcMain.on('toggle-widget-mode', () => {
       isCustomFullScreen = false;
     }
     if (mainWindow.isMaximized()) mainWindow.unmaximize();
-    mainWindow.setMinimumSize(290, 220);
-    mainWindow.setSize(300, 240);
+    mainWindow.setMinimumSize(320, 285);
+    mainWindow.setSize(320, 285);
     mainWindow.setAlwaysOnTop(true, 'screen-saver'); // Always-on-top floating above all windows
     mainWindow.setResizable(false);
     // Position near the top-right of the screen
     const { screen } = require('electron');
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width } = primaryDisplay.workAreaSize;
-    mainWindow.setPosition(width - 300, 50);
+    mainWindow.setPosition(width - 340, 50);
   }
 });
 
