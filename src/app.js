@@ -2210,14 +2210,28 @@ function renderTasks() { try {
       </button>
     ` : '';
 
+    const editReflectionBtnHtml = task.completed ? `
+      <button title="Edit Reflection & Attachments" onclick="openCompletionModal('${task.id}'); event.stopPropagation();" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); padding: 3px 8px; border-radius: 6px; color: var(--theme-color); cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+        📝 Reflection
+      </button>
+    ` : '';
+
     let reflectionHtml = '';
-    if (task.completed && (task.completionNote || task.completionImage)) {
+    if (task.completed && (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument)) {
       let imgHtml = '';
       if (task.completionImage) {
-        imgHtml = `<img src="${task.completionImage}" onclick="openImageViewer('${task.completionImage}'); event.stopPropagation();" title="Click to enlarge screenshot proof" style="max-height: 70px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); margin-top: 4px; display: block; object-fit: contain; background: #000;">`;
+        imgHtml = `<img src="${task.completionImage}" onclick="openImageViewer('${task.completionImage}'); event.stopPropagation();" title="Click to enlarge screenshot proof" style="max-height: 80px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); margin-top: 6px; display: block; object-fit: contain; background: #000;">`;
       }
-      let noteHtml = task.completionNote ? `<div style="font-size: 11.5px; color: var(--theme-color); font-style: italic; margin-top: 2px;">" ${task.completionNote} "</div>` : '';
-      reflectionHtml = `<div class="task-reflection-box" style="margin-top: 6px; padding: 6px 10px; background: rgba(255,255,255,0.03); border-left: 2px solid var(--theme-color); border-radius: 4px;">${noteHtml}${imgHtml}</div>`;
+      let videoHtml = '';
+      if (task.completionVideo) {
+        videoHtml = `<video controls src="${task.completionVideo}" style="max-height: 140px; width: 100%; border-radius: 6px; margin-top: 6px; background: #000; border: 1px solid rgba(59, 130, 246, 0.4);"></video>`;
+      }
+      let docHtml = '';
+      if (task.completionDocument && task.completionDocument.data) {
+        docHtml = `<a href="${task.completionDocument.data}" download="${task.completionDocument.name || 'attachment'}" onclick="event.stopPropagation();" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px; color: #10b981; font-size: 11.5px; text-decoration: none; margin-top: 6px; font-weight: 600;">📄 ${task.completionDocument.name || 'Download Document'} ⬇️</a>`;
+      }
+      let noteHtml = task.completionNote ? `<div style="font-size: 11.5px; color: var(--theme-color); font-style: italic; margin-top: 2px; line-height: 1.4;">" ${task.completionNote} "</div>` : '';
+      reflectionHtml = `<div class="task-reflection-box" style="margin-top: 6px; padding: 8px 12px; background: rgba(255,255,255,0.03); border-left: 3px solid var(--theme-color); border-radius: 6px;">${noteHtml}${imgHtml}${videoHtml}${docHtml}</div>`;
     }
     
     li.innerHTML = `
@@ -2232,6 +2246,7 @@ function renderTasks() { try {
         </div>
         <div class="task-item-right">
           <span class="task-badge">${badgeLabel}</span>
+          ${editReflectionBtnHtml}
           ${reorderControlsHtml}
           ${focusBtnHtml}
           <button class="btn-edit-task" title="Edit Task" onclick="openTaskDetails('${task.id}'); event.stopPropagation();" style="background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.7; transition: all 0.2s ease;" onmouseover="this.style.opacity='1'; this.style.color='var(--color-cyan)'" onmouseout="this.style.opacity='0.7'; this.style.color='var(--text-muted)'">
@@ -3926,30 +3941,85 @@ if (window.electronAPI && window.electronAPI.onWindowClosing) {
   window.electronAPI.onWindowClosing(handleAppCloseLog);
 }
 
-// --- Completion Reflection Modal & Screenshot Uploader ---
+// --- Completion Reflection Modal & Screenshot/Video/Doc Uploader ---
 let pendingCompletionTaskId = null;
 let currentCompletionImageData = null;
+let currentCompletionVideoData = null;
+let currentCompletionDocData = null;
 
 function openCompletionModal(taskId) {
   pendingCompletionTaskId = taskId;
   currentCompletionImageData = null;
+  currentCompletionVideoData = null;
+  currentCompletionDocData = null;
+
   const modal = document.getElementById('completion-modal');
   const inputNote = document.getElementById('completion-note-input');
-  const previewContainer = document.getElementById('completion-image-preview-container');
-  const previewImg = document.getElementById('completion-image-preview');
-  const fileInput = document.getElementById('completion-image-file');
+  
+  // Image elements
+  const imgPreviewContainer = document.getElementById('completion-image-preview-container');
+  const imgPreview = document.getElementById('completion-image-preview');
+  const imgFileInput = document.getElementById('completion-image-file');
   const btnClearImg = document.getElementById('btn-clear-completion-image');
 
+  // Video elements
+  const videoPreviewContainer = document.getElementById('completion-video-preview-container');
+  const videoPreview = document.getElementById('completion-video-preview');
+  const videoFileInput = document.getElementById('completion-video-file');
+  const btnClearVideo = document.getElementById('btn-clear-completion-video');
+
+  // Document elements
+  const docPreviewContainer = document.getElementById('completion-doc-preview-container');
+  const docNameSpan = document.getElementById('completion-doc-name');
+  const docFileInput = document.getElementById('completion-doc-file');
+  const btnClearDoc = document.getElementById('btn-clear-completion-doc');
+
+  // Reset fields
   if (inputNote) inputNote.value = '';
-  if (previewContainer) previewContainer.classList.add('hidden');
-  if (previewImg) previewImg.src = '';
-  if (fileInput) fileInput.value = '';
+  
+  if (imgPreviewContainer) imgPreviewContainer.classList.add('hidden');
+  if (imgPreview) imgPreview.src = '';
+  if (imgFileInput) imgFileInput.value = '';
   if (btnClearImg) btnClearImg.classList.add('hidden');
+
+  if (videoPreviewContainer) videoPreviewContainer.classList.add('hidden');
+  if (videoPreview) videoPreview.src = '';
+  if (videoFileInput) videoFileInput.value = '';
+  if (btnClearVideo) btnClearVideo.classList.add('hidden');
+
+  if (docPreviewContainer) docPreviewContainer.classList.add('hidden');
+  if (docNameSpan) docNameSpan.textContent = '';
+  if (docFileInput) docFileInput.value = '';
+  if (btnClearDoc) btnClearDoc.classList.add('hidden');
+
+  // Pre-fill existing task completion data if available
+  const task = appState.tasks.find(t => t.id === taskId);
+  if (task) {
+    if (task.completionNote && inputNote) inputNote.value = task.completionNote;
+    if (task.completionImage) {
+      currentCompletionImageData = task.completionImage;
+      if (imgPreview) imgPreview.src = task.completionImage;
+      if (imgPreviewContainer) imgPreviewContainer.classList.remove('hidden');
+      if (btnClearImg) btnClearImg.classList.remove('hidden');
+    }
+    if (task.completionVideo) {
+      currentCompletionVideoData = task.completionVideo;
+      if (videoPreview) videoPreview.src = task.completionVideo;
+      if (videoPreviewContainer) videoPreviewContainer.classList.remove('hidden');
+      if (btnClearVideo) btnClearVideo.classList.remove('hidden');
+    }
+    if (task.completionDocument) {
+      currentCompletionDocData = task.completionDocument;
+      if (docNameSpan) docNameSpan.textContent = task.completionDocument.name || 'Document';
+      if (docPreviewContainer) docPreviewContainer.classList.remove('hidden');
+      if (btnClearDoc) btnClearDoc.classList.remove('hidden');
+    }
+  }
 
   if (modal) modal.classList.remove('hidden');
 }
 
-function finalizeTaskCompletion(noteText, imageData) {
+function finalizeTaskCompletion(noteText, imageData, videoData, docData) {
   const modal = document.getElementById('completion-modal');
   if (modal) modal.classList.add('hidden');
 
@@ -3958,8 +4028,10 @@ function finalizeTaskCompletion(noteText, imageData) {
   if (task) {
     task.completed = true;
     task.completedAt = new Date().toISOString();
-    if (noteText) task.completionNote = noteText;
-    if (imageData) task.completionImage = imageData;
+    task.completionNote = noteText || '';
+    if (imageData !== undefined) task.completionImage = imageData;
+    if (videoData !== undefined) task.completionVideo = videoData;
+    if (docData !== undefined) task.completionDocument = docData;
     logActivity('task', `Completed task: ${task.name}`);
     playChime('taskComplete');
     if (typeof addXP === 'function') addXP(50);
@@ -3968,6 +4040,8 @@ function finalizeTaskCompletion(noteText, imageData) {
   }
   pendingCompletionTaskId = null;
   currentCompletionImageData = null;
+  currentCompletionVideoData = null;
+  currentCompletionDocData = null;
 }
 
 function openImageViewer(imgSrc) {
@@ -3986,9 +4060,22 @@ window.finalizeTaskCompletion = finalizeTaskCompletion;
 const elBtnCloseCompletionModal = document.getElementById('btn-close-completion-modal');
 const elBtnSaveCompletion = document.getElementById('btn-save-completion');
 const elBtnSkipCompletion = document.getElementById('btn-skip-completion');
+
+// Image inputs
 const elBtnUploadCompletionImage = document.getElementById('btn-upload-completion-image');
 const elCompletionImageFile = document.getElementById('completion-image-file');
 const elBtnClearCompletionImage = document.getElementById('btn-clear-completion-image');
+
+// Video inputs
+const elBtnUploadCompletionVideo = document.getElementById('btn-upload-completion-video');
+const elCompletionVideoFile = document.getElementById('completion-video-file');
+const elBtnClearCompletionVideo = document.getElementById('btn-clear-completion-video');
+
+// Document inputs
+const elBtnUploadCompletionDoc = document.getElementById('btn-upload-completion-doc');
+const elCompletionDocFile = document.getElementById('completion-doc-file');
+const elBtnClearCompletionDoc = document.getElementById('btn-clear-completion-doc');
+
 const elBtnCloseImageViewer = document.getElementById('btn-close-image-viewer');
 const elImageViewerModal = document.getElementById('image-viewer-modal');
 
@@ -4002,7 +4089,7 @@ if (elBtnCloseCompletionModal) {
 
 if (elBtnSkipCompletion) {
   elBtnSkipCompletion.addEventListener('click', () => {
-    finalizeTaskCompletion('', null);
+    finalizeTaskCompletion('', null, null, null);
   });
 }
 
@@ -4010,10 +4097,11 @@ if (elBtnSaveCompletion) {
   elBtnSaveCompletion.addEventListener('click', () => {
     const input = document.getElementById('completion-note-input');
     const noteText = input ? input.value.trim() : '';
-    finalizeTaskCompletion(noteText, currentCompletionImageData);
+    finalizeTaskCompletion(noteText, currentCompletionImageData, currentCompletionVideoData, currentCompletionDocData);
   });
 }
 
+// Image handler
 if (elBtnUploadCompletionImage && elCompletionImageFile) {
   elBtnUploadCompletionImage.addEventListener('click', () => {
     elCompletionImageFile.click();
@@ -4045,6 +4133,79 @@ if (elBtnClearCompletionImage) {
     if (previewImg) previewImg.src = '';
     if (elCompletionImageFile) elCompletionImageFile.value = '';
     elBtnClearCompletionImage.classList.add('hidden');
+  });
+}
+
+// Video handler
+if (elBtnUploadCompletionVideo && elCompletionVideoFile) {
+  elBtnUploadCompletionVideo.addEventListener('click', () => {
+    elCompletionVideoFile.click();
+  });
+
+  elCompletionVideoFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        currentCompletionVideoData = evt.target.result;
+        const videoPreview = document.getElementById('completion-video-preview');
+        const videoPreviewContainer = document.getElementById('completion-video-preview-container');
+        if (videoPreview) videoPreview.src = currentCompletionVideoData;
+        if (videoPreviewContainer) videoPreviewContainer.classList.remove('hidden');
+        if (elBtnClearCompletionVideo) elBtnClearCompletionVideo.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+if (elBtnClearCompletionVideo) {
+  elBtnClearCompletionVideo.addEventListener('click', () => {
+    currentCompletionVideoData = null;
+    const videoPreviewContainer = document.getElementById('completion-video-preview-container');
+    const videoPreview = document.getElementById('completion-video-preview');
+    if (videoPreviewContainer) videoPreviewContainer.classList.add('hidden');
+    if (videoPreview) videoPreview.src = '';
+    if (elCompletionVideoFile) elCompletionVideoFile.value = '';
+    elBtnClearCompletionVideo.classList.add('hidden');
+  });
+}
+
+// Document handler
+if (elBtnUploadCompletionDoc && elCompletionDocFile) {
+  elBtnUploadCompletionDoc.addEventListener('click', () => {
+    elCompletionDocFile.click();
+  });
+
+  elCompletionDocFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        currentCompletionDocData = {
+          name: file.name,
+          data: evt.target.result
+        };
+        const docNameSpan = document.getElementById('completion-doc-name');
+        const docPreviewContainer = document.getElementById('completion-doc-preview-container');
+        if (docNameSpan) docNameSpan.textContent = file.name;
+        if (docPreviewContainer) docPreviewContainer.classList.remove('hidden');
+        if (elBtnClearCompletionDoc) elBtnClearCompletionDoc.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+if (elBtnClearCompletionDoc) {
+  elBtnClearCompletionDoc.addEventListener('click', () => {
+    currentCompletionDocData = null;
+    const docPreviewContainer = document.getElementById('completion-doc-preview-container');
+    const docNameSpan = document.getElementById('completion-doc-name');
+    if (docPreviewContainer) docPreviewContainer.classList.add('hidden');
+    if (docNameSpan) docNameSpan.textContent = '';
+    if (elCompletionDocFile) elCompletionDocFile.value = '';
+    elBtnClearCompletionDoc.classList.add('hidden');
   });
 }
 
