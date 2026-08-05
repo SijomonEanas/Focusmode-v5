@@ -4241,6 +4241,14 @@ if (elBtnClearCompletionDoc) {
   });
 }
 
+// Enable F5 and Ctrl+R to dynamically refresh the app renderer
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
+    e.preventDefault();
+    window.location.reload();
+  }
+});
+
 if (elBtnCloseImageViewer && elImageViewerModal) {
   elBtnCloseImageViewer.addEventListener('click', () => {
     elImageViewerModal.classList.add('hidden');
