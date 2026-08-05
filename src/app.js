@@ -96,10 +96,32 @@ let selectedCalDate = new Date(); // Date object defaults to today
 let audioCtx = null;
 
 // Focus Streaming Music Channels Database
+const defaultMusicStations = [
+  { id: 'station-1', name: "Lofi Focus Beats", desc: "Chill study beats & lo-fi hip hop", url: "https://stream.zeno.fm/f3wvbbqmdg8uv" },
+  { id: 'station-2', name: "Deep Work Synthwave", desc: "Retro electronic & synth focus", url: "https://stream.zeno.fm/0r0xa792kwzuv" },
+  { id: 'station-3', name: "Nature & Soft Rain", desc: "Calming rain & ambient nature soundscapes", url: "https://stream.zeno.fm/u5d878h9bhruv" },
+  { id: 'station-4', name: "Classical Productivity", desc: "Inspiring piano & orchestral focus music", url: "https://stream.zeno.fm/wf843x5bhruv" },
+  { id: 'station-5', name: "Ambient Space & Drone", desc: "Atmospheric cosmic ambient pads", url: "https://stream.zeno.fm/7c490895318uv" }
+];
 const musicStations = [];
 let currentStationIndex = 0;
 let isMusicPlaying = false;
 let isShuffleActive = false;
+
+function initStations() {
+  musicStations.length = 0;
+  musicStations.push(...defaultMusicStations);
+  if (appState.settings && appState.settings.localMusicList && appState.settings.localMusicList.length > 0) {
+    appState.settings.localMusicList.forEach((track, idx) => {
+      musicStations.push({
+        id: 'local-saved-' + idx,
+        name: track.name,
+        desc: "Local Audio File",
+        url: track.path ? ("file://" + track.path.replace(/\\/g, '/')) : ''
+      });
+    });
+  }
+}
 
 // Quotes Database
 const quotes = [
@@ -973,18 +995,7 @@ async function initApp() { try {
   
   // Setup focus MP3 streaming volume and player source
   elBgMusicPlayer.volume = parseFloat(elSoundMusicVolume.value);
-  // Load local playlist from persistent storage
-  if (appState.settings.localMusicList && appState.settings.localMusicList.length > 0) {
-    musicStations.length = 0;
-    appState.settings.localMusicList.forEach((track, idx) => {
-      musicStations.push({
-        id: 'local-saved-' + idx,
-        name: track.name,
-        desc: "Local Audio File",
-        url: "file://" + track.path.replace(/\\/g, '/')
-      });
-    });
-  }
+  initStations();
 
   currentStationIndex = appState.settings.currentMusicIndex || 0;
   loadStation(currentStationIndex);
@@ -2095,27 +2106,21 @@ elBtnLoadLocal.addEventListener('click', () => {
 elLocalMusicPicker.addEventListener('change', (e) => {
   const files = Array.from(e.target.files);
   if (files.length > 0) {
-    musicStations.length = 0;
     if (!appState.settings) appState.settings = {};
-    appState.settings.localMusicList = [];
+    if (!appState.settings.localMusicList) appState.settings.localMusicList = [];
     
-    const localTracks = files.map((file, idx) => {
+    files.forEach((file) => {
       appState.settings.localMusicList.push({
         name: file.name.replace(/\.[^/.]+$/, ""),
         path: file.path
       });
-      return {
-        id: 'local-' + Date.now() + '-' + idx,
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        desc: "Local Audio File",
-        url: "file://" + file.path.replace(/\\/g, '/')
-      };
     });
     
-    musicStations.push(...localTracks);
+    initStations();
     saveAppState();
     
-    currentStationIndex = 0;
+    currentStationIndex = musicStations.length - files.length;
+    if (currentStationIndex < 0) currentStationIndex = 0;
     loadStation(currentStationIndex);
     playMusic();
   }
@@ -3740,9 +3745,12 @@ let screensaverActive = false;
 
 if (elScreensaverImage) {
   elScreensaverImage.onload = () => {
-    // Determine dynamic zoom. If horizontal, fill screen to remove black bars
-    const aspect = elScreensaverImage.naturalWidth / elScreensaverImage.naturalHeight;
-    elScreensaverImage.style.objectFit = aspect > 1.2 ? 'cover' : 'contain';
+    // ALWAYS use contain to show the entire full image without cropping top/bottom edges
+    elScreensaverImage.style.objectFit = 'contain';
+    elScreensaverImage.style.width = 'auto';
+    elScreensaverImage.style.height = 'auto';
+    elScreensaverImage.style.maxWidth = '94vw';
+    elScreensaverImage.style.maxHeight = '94vh';
   };
 }
 
