@@ -3243,6 +3243,33 @@ window.startCustomBreak = startCustomBreak;
 window.startCustomBreakInput = startCustomBreakInput;
 window.endBreakAndResumeFocus = endBreakAndResumeFocus;
 
+function extendTimer(extraMins) {
+  const extraSecs = extraMins * 60;
+  currentTimer += extraSecs;
+  
+  const taskId = targetReachedTaskId || activeTaskId;
+  if (taskId) {
+    const task = appState.tasks.find(t => t.id === taskId);
+    if (task) {
+      task.targetDuration = (task.targetDuration || 0) + extraSecs;
+    }
+  }
+  
+  targetReachedTaskId = null;
+  showCustomToast('Timer Extended!', `Added +${extraMins} mins to focus session.`);
+  
+  const modal = document.getElementById('task-target-modal');
+  if (modal) modal.classList.add('hidden');
+  
+  renderAll();
+  saveAppState();
+  if (!timerRunning) {
+    startTimer();
+  }
+}
+
+window.extendTimer = extendTimer;
+
 function timerFinished() {
   pauseTimer();
   if (sessionType === 'focus') {
@@ -3250,41 +3277,57 @@ function timerFinished() {
     playChime('focusComplete');
     if (typeof addXP === 'function') addXP(200);
 
-    if (appState.settings.autoStartBreak === true) {
-      sessionType = 'shortBreak';
-      currentTimer = appState.settings.shortBreakMinutes * 60;
-      if (appState.settings.notifications) {
-        window.electronAPI.sendNotification({ title: 'Focus session complete!', body: 'Earned 200 XP. Time for a break.' });
-        showCustomToast('Focus session complete!', 'Earned 200 XP. Time for a break.');
-      }
-    } else {
-      // Continuous Focus Mode (Manual Breaks Only)
-      sessionType = 'focus';
-      currentTimer = appState.settings.focusDurationMinutes * 60;
-      if (appState.settings.notifications) {
-        window.electronAPI.sendNotification({ title: '25m Focus Session Done!', body: 'Earned 200 XP. Continuing focus timer continuous!' });
-        showCustomToast('25m Focus Session Done!', 'Earned 200 XP. Continuing focus timer continuous!');
-      }
-      startTimer(); // Keep focusing!
+    // Auto switch from compact view mode to full screen mode to view popup
+    if (document.body.classList.contains('mini-mode') || isWidgetMode) {
+      toggleMiniMode(false);
     }
+
+    // Always trigger popup modal with extension & break options!
+    const modal = document.getElementById('task-target-modal');
+    const msg = document.getElementById('task-target-modal-msg');
+    const task = activeTaskId ? appState.tasks.find(t => t.id === activeTaskId) : null;
+    
+    if (msg) {
+      if (task) {
+        msg.textContent = `🎯 Focus session / Goal complete for "${task.name}"! Need more time, ready for a break, or mark complete?`;
+      } else {
+        msg.textContent = `⏰ Focus session complete! Need more time or ready for a break?`;
+      }
+    }
+
+    const finishBtn = document.getElementById('btn-finish-target-task');
+    if (finishBtn) {
+      const newFinishBtn = finishBtn.cloneNode(true);
+      finishBtn.parentNode.replaceChild(newFinishBtn, finishBtn);
+      newFinishBtn.addEventListener('click', () => {
+        if (modal) modal.classList.add('hidden');
+        if (task) {
+          openCompletionModal(task.id);
+        } else {
+          showCustomToast('Great job!', 'Completed focus session.');
+        }
+      });
+    }
+
+    if (modal) modal.classList.remove('hidden');
+
+    if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
+      window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: 'Earned 200 XP. Choose to extend or take a break.' });
+    }
+    showCustomToast('Focus Session Complete!', 'Earned 200 XP. Choose to extend time or take a break.');
   } else {
     // Break finished! Resume focus timer automatically!
     logActivity('timer', 'Completed a Break');
     playChime('breakComplete');
     sessionType = 'focus';
-    if (savedFocusTimerState && savedFocusTimerState.currentTimer > 0) {
-      currentTimer = savedFocusTimerState.currentTimer;
-    } else {
-      currentTimer = appState.settings.focusDurationMinutes * 60;
-    }
-    savedFocusTimerState = null;
-    if (appState.settings.notifications) {
+    currentTimer = appState.settings.focusDurationMinutes * 60;
+    if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
       window.electronAPI.sendNotification({ title: 'Break over!', body: 'Time to resume focusing.' });
-      showCustomToast('Break over!', 'Time to resume focusing.');
     }
-    startTimer(); // Automatically resume focus timer after break!
+    showCustomToast('Break over!', 'Time to resume focusing.');
+    startTimer();
   }
-  rotateQuote(); // Rotate quote on session completion
+  rotateQuote();
   renderAll();
   saveAppState();
 }
@@ -3328,25 +3371,14 @@ function triggerTaskTargetModal(task) {
 }
 
 function extendCurrentTask(extraMins) {
-  const taskId = targetReachedTaskId || activeTaskId;
-  const task = appState.tasks.find(t => t.id === taskId);
-  if (task) {
-    const extraSecs = extraMins * 60;
-    task.targetDuration = (task.targetDuration || 0) + extraSecs;
-    targetReachedTaskId = null;
-    showCustomToast('Timer Extended!', `Added +${extraMins} mins to ${task.name}`);
-    renderAll();
-    saveAppState();
-  }
-  const modal = document.getElementById('task-target-modal');
-  if (modal) modal.classList.add('hidden');
+  extendTimer(extraMins);
 }
 
 function extendCurrentTaskCustom() {
   const input = document.getElementById('input-custom-extend-mins');
   const mins = parseInt(input ? input.value : 0);
   if (mins && mins > 0) {
-    extendCurrentTask(mins);
+    extendTimer(mins);
     if (input) input.value = '';
   }
 }
