@@ -3504,6 +3504,19 @@ if (elMiniTimerPlayPause) {
       }
     });
   }
+
+  const breakOptBtns = document.querySelectorAll('.break-opt-btn');
+  breakOptBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const mins = e.currentTarget.getAttribute('data-mins') || 5;
+      startCustomBreak(mins);
+    });
+  });
+
+  const btnStartCustomBreakInput = document.getElementById('btn-start-custom-break-input');
+  if (btnStartCustomBreakInput) {
+    btnStartCustomBreakInput.addEventListener('click', startCustomBreakInput);
+  }
   
   elBtnTogglePending.addEventListener('click', () => {
     document.getElementById('pending-section').classList.toggle('open');

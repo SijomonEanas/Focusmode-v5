@@ -1052,24 +1052,27 @@
           <p style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin: 0; line-height: 1.4;">Select break time. When your break ends or when you release it, your focus timer will automatically resume!</p>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="control-btn" onclick="startCustomBreak(5)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <button class="control-btn break-opt-btn" data-mins="5" onclick="startCustomBreak(5)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
               ☕ 5 Mins Break
             </button>
-            <button class="control-btn" onclick="startCustomBreak(10)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <button class="control-btn break-opt-btn" data-mins="10" onclick="startCustomBreak(10)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
               ☕ 10 Mins Break
             </button>
-            <button class="control-btn" onclick="startCustomBreak(15)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <button class="control-btn break-opt-btn" data-mins="15" onclick="startCustomBreak(15)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
               ☕ 15 Mins Break
             </button>
-            <button class="control-btn" onclick="startCustomBreak(20)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <button class="control-btn break-opt-btn" data-mins="20" onclick="startCustomBreak(20)" style="padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--theme-color); color: white; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
               ☕ 20 Mins Break
             </button>
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px;">
             <input type="number" id="input-custom-break-mins" placeholder="Custom Mins (e.g. 8)" min="1" max="120" style="flex: 1; padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 0.9rem;">
-            <button onclick="startCustomBreakInput()" class="control-btn primary-btn" style="padding: 10px 18px; background: var(--gradient-focus); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">Start Break</button>
+            <button id="btn-start-custom-break-input" onclick="startCustomBreakInput()" class="control-btn primary-btn" style="padding: 10px 18px; background: var(--gradient-focus); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">Start Break</button>
           </div>
+        </div>
+      </div>
+    </div>
     <!-- Task Completion Reflection Modal -->
     <div id="completion-modal" class="overlay hidden" style="z-index: 10008;">
       <div class="glass-card modal-content" style="max-width: 480px; width: 92%; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(20px); border: 1.5px solid var(--theme-color); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
