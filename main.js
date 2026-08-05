@@ -91,9 +91,9 @@ function createWidgetWindow() {
   const { width } = primaryDisplay.workAreaSize;
 
   widgetWindow = new BrowserWindow({
-    width: 290, height: 200,
-    minWidth: 290, minHeight: 200,
-    x: width - 300, y: 50,
+    width: 320, height: 275,
+    minWidth: 290, minHeight: 250,
+    x: width - 340, y: 50,
     frame: false,
     transparent: true,
     alwaysOnTop: false,
@@ -262,8 +262,8 @@ ipcMain.on('toggle-widget-mode', () => {
       isCustomFullScreen = false;
     }
     if (mainWindow.isMaximized()) mainWindow.unmaximize();
-    mainWindow.setMinimumSize(360, 220);
-    mainWindow.setSize(360, 220);
+    mainWindow.setMinimumSize(290, 220);
+    mainWindow.setSize(300, 240);
     mainWindow.setAlwaysOnTop(true, 'screen-saver'); // Always-on-top floating above all windows
     mainWindow.setResizable(false);
     // Position near the top-right of the screen

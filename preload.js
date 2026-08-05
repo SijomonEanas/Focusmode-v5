@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   close: () => ipcRenderer.send('window-close'),
   toggleWidgetMode: () => ipcRenderer.send('toggle-widget-mode'),
   toggleDashboardMode: () => ipcRenderer.send('toggle-dashboard-mode'),
+  resizeWidgetHeight: (height) => ipcRenderer.send('resize-widget-height', height),
   
   // Data Persistence
   loadData: () => ipcRenderer.invoke('load-data'),

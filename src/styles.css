@@ -2472,14 +2472,15 @@ body.mini-mode .dashboard-section {
 body.mini-mode .timer-card {
   border: none;
   background: transparent;
-  padding: 4px 6px;
+  padding: 6px 10px 10px 10px;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  box-sizing: border-box;
 }
 
 body.mini-mode .progress-ring-container {
@@ -2825,15 +2826,14 @@ body.widget-mode {
 }
 
 
-.mini-task-dropdown {
+.mini-action-btn {
   background: transparent;
   color: var(--text-main);
   border: 1px solid var(--card-border);
   border-radius: 4px;
   padding: 2px 5px;
   font-family: inherit;
-  font-size: 0.9rem;
-font-size: 10px;
+  font-size: 10px;
   cursor: pointer;
   width: 18px;
   height: 18px;
@@ -3007,11 +3007,34 @@ body.widget-mode .app-body {
     overflow: hidden !important;
 }
 
-body.widget-mode .timer-card, body.widget-mode .audio-card {
+body.widget-mode .timer-card {
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
-    padding: 5px !important;
+    padding: 2px 4px !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+body.widget-mode .mini-main-content-row {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 2px !important;
+    width: 100% !important;
+}
+
+body.widget-mode .timer-display {
+    margin: 2px 0 !important;
+}
+
+body.widget-mode .mini-music-bar-container {
+    padding: 2px 8px !important;
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
 }
 
 body.widget-mode {
@@ -3021,21 +3044,28 @@ body.widget-mode {
 
 
 .mini-task-dropdown {
-  background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--card-border);
-  border-radius: 4px;
-  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 3px 6px;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
   font-weight: 600;
   outline: none;
   cursor: pointer;
-  max-width: 150px;
+  max-width: 165px;
+  min-width: 110px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
 }
 .mini-task-dropdown option {
   background: #1a162b;
-  color: var(--text-main);
+  color: #ffffff;
+  padding: 6px;
 }
 
 
@@ -3593,4 +3623,27 @@ h1, h2, h3, h4, h5, h6,
 .collapsible-header .header-title {
   color: var(--color-purple) !important;
   font-weight: 700 !important;
+}
+
+/* Glassmorphic Modal Close Button Styling */
+.close-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  color: #a0a0b0 !important;
+  font-size: 1rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border-color: var(--color-purple) !important;
+  transform: scale(1.06) !important;
 }

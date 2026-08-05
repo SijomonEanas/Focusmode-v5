@@ -929,6 +929,7 @@ async function initApp() { try {
     if (appState.settings.dayResetHour === undefined) appState.settings.dayResetHour = 5;
     if (appState.settings.soundVolume === undefined) appState.settings.soundVolume = 0.5;
     if (appState.settings.themeIndex === undefined) appState.settings.themeIndex = 0;
+    if (appState.settings.autoStartBreak === undefined) appState.settings.autoStartBreak = false;
     
     // Apply Global Neon Theme
     applyNeonTheme(appState.settings.themeIndex);
@@ -1061,15 +1062,31 @@ function renderTimer() { try {
     elSecRing.style.strokeDashoffset = secOffset;
   }
   
+  const btnTakeBreak = document.getElementById('btn-take-break');
   if (sessionType === 'focus') {
     elTimerStateLabel.textContent = timerRunning ? 'Focusing' : 'Ready to Focus';
     elTimerStateLabel.style.color = 'var(--color-purple)';
+    if (btnTakeBreak) {
+      btnTakeBreak.innerHTML = '☕ Break';
+      btnTakeBreak.style.background = 'rgba(255,255,255,0.08)';
+      btnTakeBreak.style.color = '#fff';
+    }
   } else if (sessionType === 'shortBreak') {
-    elTimerStateLabel.textContent = 'Short Break';
+    elTimerStateLabel.textContent = `☕ Break (${Math.ceil(currentTimer / 60)}m)`;
     elTimerStateLabel.style.color = 'var(--color-amber)';
+    if (btnTakeBreak) {
+      btnTakeBreak.innerHTML = '▶ Resume Focus';
+      btnTakeBreak.style.background = 'var(--gradient-focus)';
+      btnTakeBreak.style.color = '#fff';
+    }
   } else if (sessionType === 'longBreak') {
-    elTimerStateLabel.textContent = 'Long Break';
+    elTimerStateLabel.textContent = `☕ Long Break (${Math.ceil(currentTimer / 60)}m)`;
     elTimerStateLabel.style.color = 'var(--color-cyan)';
+    if (btnTakeBreak) {
+      btnTakeBreak.innerHTML = '▶ Resume Focus';
+      btnTakeBreak.style.background = 'var(--gradient-focus)';
+      btnTakeBreak.style.color = '#fff';
+    }
   }
 
   if (activeTaskId) {
@@ -1658,6 +1675,9 @@ function renderSelectedDayTasks() {
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="task-badge">${badgeText}</span>
+            <button class="btn-edit-task" title="Edit Task" onclick="openTaskDetails('${task.id}'); event.stopPropagation();" style="background: transparent; border: none; padding: 2px 4px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: all 0.2s ease;">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
             <svg class="dropdown-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s; color: var(--text-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </div>
         </div>
@@ -2115,8 +2135,11 @@ function renderTasks() { try {
     elMiniTaskSwitcher.innerHTML = '<option value="">No Active Task</option>';
   }
 
-  // Main tasks list shows tasks active TODAY
+  // Main tasks list shows tasks active TODAY (or scheduled tasks when 'scheduled' workspace is selected)
   const activeTodayTasks = appState.tasks.filter(task => {
+    if (activeWorkspace === 'scheduled') {
+      return (task.scheduleDate || (task.plannerDays && task.plannerDays.length > 0) || task.plannerDay) && !task.completed;
+    }
     const wsMatch = activeWorkspace === 'all' || task.workspace === activeWorkspace;
     const activeDate = isTaskActiveOnDate(task, today);
     return wsMatch && activeDate;
@@ -2179,6 +2202,16 @@ function renderTasks() { try {
         }
       </button>
     ` : '';
+
+    let reflectionHtml = '';
+    if (task.completed && (task.completionNote || task.completionImage)) {
+      let imgHtml = '';
+      if (task.completionImage) {
+        imgHtml = `<img src="${task.completionImage}" onclick="openImageViewer('${task.completionImage}'); event.stopPropagation();" title="Click to enlarge screenshot proof" style="max-height: 70px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); margin-top: 4px; display: block; object-fit: contain; background: #000;">`;
+      }
+      let noteHtml = task.completionNote ? `<div style="font-size: 11.5px; color: var(--theme-color); font-style: italic; margin-top: 2px;">" ${task.completionNote} "</div>` : '';
+      reflectionHtml = `<div class="task-reflection-box" style="margin-top: 6px; padding: 6px 10px; background: rgba(255,255,255,0.03); border-left: 2px solid var(--theme-color); border-radius: 4px;">${noteHtml}${imgHtml}</div>`;
+    }
     
     li.innerHTML = `
       <div class="task-item-main">
@@ -2206,6 +2239,7 @@ function renderTasks() { try {
         </div>
       </div>
       ${extraControlsHtml}
+      ${reflectionHtml}
     `;
     
     if (task.completed) {
@@ -2217,9 +2251,13 @@ function renderTasks() { try {
       if (elMiniTaskSwitcher) {
         const option = document.createElement('option');
         option.value = task.id;
-        option.textContent = task.name;
+        const goalMinutes = task.targetDuration ? Math.floor(task.targetDuration / 60) : 0;
+        const goalStr = goalMinutes > 0 ? ` (${goalMinutes}m goal)` : '';
+        option.textContent = task.name + goalStr;
+        option.title = `${task.name}${goalStr}${task.notes ? ' - ' + task.notes : ''}`;
         if (task.id === activeTaskId) {
           option.selected = true;
+          elMiniTaskSwitcher.title = option.title;
         }
         elMiniTaskSwitcher.appendChild(option);
       }
@@ -2798,38 +2836,62 @@ elBtnCloseCalendar.addEventListener('click', () => {
 });
 
 // --- Floating Pip Mini-Widget Toggle ---
-elBtnToggleWidget.addEventListener('click', () => {
-  playChime('click');
-  isWidgetMode = !isWidgetMode;
+function toggleMiniMode(forceState) {
+  if (forceState !== undefined) {
+    isWidgetMode = forceState;
+  } else {
+    isWidgetMode = !isWidgetMode;
+  }
   
-  // Swap window control icons and tooltips dynamically
   if (isWidgetMode) {
     document.body.classList.add('mini-mode');
-    elBtnToggleWidget.innerHTML = `
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-      </svg>
-    `;
-    elBtnToggleWidget.title = "Maximize Dashboard";
+    if (elBtnToggleWidget) {
+      elBtnToggleWidget.innerHTML = `
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        </svg>
+      `;
+      elBtnToggleWidget.title = "Maximize Dashboard";
+    }
     if (window.electronAPI && window.electronAPI.toggleWidgetMode) {
       window.electronAPI.toggleWidgetMode();
     }
   } else {
     document.body.classList.remove('mini-mode');
-    elBtnToggleWidget.innerHTML = `
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <rect x="13" y="13" width="8" height="8" rx="1"/>
-      </svg>
-    `;
-    elBtnToggleWidget.title = "Compact Overlay Mode";
+    if (elBtnToggleWidget) {
+      elBtnToggleWidget.innerHTML = `
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <rect x="13" y="13" width="8" height="8" rx="1"/>
+        </svg>
+      `;
+      elBtnToggleWidget.title = "Compact Overlay Mode";
+    }
     if (window.electronAPI && window.electronAPI.toggleDashboardMode) {
       window.electronAPI.toggleDashboardMode();
     }
   }
   
   renderTimer();
+  triggerWidgetAutoResize();
+}
+
+elBtnToggleWidget.addEventListener('click', () => {
+  playChime('click');
+  toggleMiniMode();
 });
+
+function triggerWidgetAutoResize() {
+  if (document.body.classList.contains('mini-mode') || document.body.classList.contains('widget-mode')) {
+    setTimeout(() => {
+      const card = document.querySelector('.timer-card');
+      if (card && window.electronAPI && window.electronAPI.resizeWidgetHeight) {
+        const height = Math.max(270, card.scrollHeight + 45);
+        window.electronAPI.resizeWidgetHeight(height);
+      }
+    }, 50);
+  }
+}
 
 if (elBtnMinimize) {
   elBtnMinimize.addEventListener('click', () => {
@@ -2840,7 +2902,11 @@ if (elBtnMinimize) {
 const elBtnMaximize = document.getElementById('btn-maximize');
 if (elBtnMaximize) {
   elBtnMaximize.addEventListener('click', () => {
-    if (window.electronAPI && window.electronAPI.maximize) window.electronAPI.maximize();
+    if (document.body.classList.contains('mini-mode') || document.body.classList.contains('widget-mode')) {
+      toggleMiniMode();
+    } else {
+      if (window.electronAPI && window.electronAPI.maximize) window.electronAPI.maximize();
+    }
   });
 }
 
@@ -2872,6 +2938,11 @@ function syncSettingsToUI() {
   elSettingShortBreak.value = appState.settings.shortBreakMinutes;
   elSettingLongBreak.value = appState.settings.longBreakMinutes;
   elSettingSoundVolume.value = appState.settings.soundVolume;
+  
+  const elSettingAutoStartBreak = document.getElementById('setting-auto-start-break');
+  if (elSettingAutoStartBreak) {
+    elSettingAutoStartBreak.checked = appState.settings.autoStartBreak === true;
+  }
 }
 
 elBtnPreviewSound.addEventListener('click', () => {
@@ -2890,6 +2961,11 @@ elBtnSaveSettings.addEventListener('click', async () => {
   const newShortBrk = parseInt(elSettingShortBreak.value) || 5;
   const newLongBrk = parseInt(elSettingLongBreak.value) || 15;
   const newVolume = parseFloat(elSettingSoundVolume.value);
+  
+  const elSettingAutoStartBreak = document.getElementById('setting-auto-start-break');
+  if (elSettingAutoStartBreak) {
+    appState.settings.autoStartBreak = elSettingAutoStartBreak.checked;
+  }
   
   if (newAutostart !== appState.settings.autostart) {
     try {
@@ -2996,7 +3072,7 @@ function startTimer() {
             }
 
             if (task.currentDuration >= target) {
-              completeTask(task.id);
+              triggerTaskTargetModal(task);
             }
           }
         }
@@ -3090,65 +3166,187 @@ function skipSession() {
   renderTimer();
 }
 
+let savedFocusTimerState = null;
+
+function startCustomBreak(mins) {
+  const modal = document.getElementById('break-picker-modal');
+  if (modal) modal.classList.add('hidden');
+  
+  savedFocusTimerState = {
+    currentTimer: currentTimer,
+    timerRunning: timerRunning
+  };
+  
+  pauseTimer();
+  sessionType = 'shortBreak';
+  currentTimer = (parseInt(mins) || 5) * 60;
+  playChime('click');
+  showCustomToast('☕ Break Started', `Enjoy your ${mins} min break! Focus timer will resume automatically after.`);
+  startTimer();
+  renderTimer();
+}
+
+function startCustomBreakInput() {
+  const input = document.getElementById('input-custom-break-mins');
+  const val = input ? parseInt(input.value) : 5;
+  startCustomBreak(val || 5);
+}
+
+function endBreakAndResumeFocus() {
+  playChime('breakComplete');
+  pauseTimer();
+  sessionType = 'focus';
+  if (savedFocusTimerState && savedFocusTimerState.currentTimer > 0) {
+    currentTimer = savedFocusTimerState.currentTimer;
+  } else {
+    currentTimer = appState.settings.focusDurationMinutes * 60;
+  }
+  savedFocusTimerState = null;
+  showCustomToast('🎯 Resuming Focus', 'Break ended! Focus timer has resumed.');
+  startTimer();
+  renderTimer();
+}
+
+window.startCustomBreak = startCustomBreak;
+window.startCustomBreakInput = startCustomBreakInput;
+window.endBreakAndResumeFocus = endBreakAndResumeFocus;
+
 function timerFinished() {
   pauseTimer();
   if (sessionType === 'focus') {
     logActivity('timer', 'Completed a Focus Session');
     playChime('focusComplete');
     if (typeof addXP === 'function') addXP(200);
-    sessionType = 'shortBreak';
-    currentTimer = appState.settings.shortBreakMinutes * 60;
-    if (appState.settings.notifications) {
-      window.electronAPI.sendNotification({ title: 'Focus session complete!', body: 'Earned 200 XP. Time for a break.' });
-      showCustomToast('Focus session complete!', 'Earned 200 XP. Time for a break.');
+
+    if (appState.settings.autoStartBreak === true) {
+      sessionType = 'shortBreak';
+      currentTimer = appState.settings.shortBreakMinutes * 60;
+      if (appState.settings.notifications) {
+        window.electronAPI.sendNotification({ title: 'Focus session complete!', body: 'Earned 200 XP. Time for a break.' });
+        showCustomToast('Focus session complete!', 'Earned 200 XP. Time for a break.');
+      }
+    } else {
+      // Continuous Focus Mode (Manual Breaks Only)
+      sessionType = 'focus';
+      currentTimer = appState.settings.focusDurationMinutes * 60;
+      if (appState.settings.notifications) {
+        window.electronAPI.sendNotification({ title: '25m Focus Session Done!', body: 'Earned 200 XP. Continuing focus timer continuous!' });
+        showCustomToast('25m Focus Session Done!', 'Earned 200 XP. Continuing focus timer continuous!');
+      }
+      startTimer(); // Keep focusing!
     }
   } else {
+    // Break finished! Resume focus timer automatically!
     logActivity('timer', 'Completed a Break');
     playChime('breakComplete');
     sessionType = 'focus';
-    currentTimer = appState.settings.focusDurationMinutes * 60;
+    if (savedFocusTimerState && savedFocusTimerState.currentTimer > 0) {
+      currentTimer = savedFocusTimerState.currentTimer;
+    } else {
+      currentTimer = appState.settings.focusDurationMinutes * 60;
+    }
+    savedFocusTimerState = null;
     if (appState.settings.notifications) {
       window.electronAPI.sendNotification({ title: 'Break over!', body: 'Time to resume focusing.' });
       showCustomToast('Break over!', 'Time to resume focusing.');
     }
+    startTimer(); // Automatically resume focus timer after break!
   }
   rotateQuote(); // Rotate quote on session completion
   renderAll();
   saveAppState();
 }
 
+// --- Task Target Duration & Extension Controllers ---
+let targetReachedTaskId = null;
+
+function triggerTaskTargetModal(task) {
+  if (!task || targetReachedTaskId === task.id) return;
+  targetReachedTaskId = task.id;
+
+  // Auto switch from compact view mode to full screen mode to view complete details & options
+  if (document.body.classList.contains('mini-mode') || isWidgetMode) {
+    toggleMiniMode(false);
+  }
+
+  const msg = document.getElementById('task-target-modal-msg');
+  if (msg) {
+    const minsStr = Math.floor(task.targetDuration / 60);
+    msg.textContent = `🎯 Goal reached for "${task.name}" (${minsStr} mins completed)! Need more time to finish?`;
+  }
+
+  const modal = document.getElementById('task-target-modal');
+  if (modal) modal.classList.remove('hidden');
+
+  playChime('focusComplete');
+  if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
+    window.electronAPI.sendNotification({ title: 'Task Target Reached!', body: `You completed your goal for ${task.name}` });
+  }
+  showCustomToast('Task Target Reached!', `Completed goal for ${task.name}`);
+
+  const finishBtn = document.getElementById('btn-finish-target-task');
+  if (finishBtn) {
+    const newFinishBtn = finishBtn.cloneNode(true);
+    finishBtn.parentNode.replaceChild(newFinishBtn, finishBtn);
+    newFinishBtn.addEventListener('click', () => {
+      document.getElementById('task-target-modal').classList.add('hidden');
+      completeTask(task.id);
+    });
+  }
+}
+
+function extendCurrentTask(extraMins) {
+  const taskId = targetReachedTaskId || activeTaskId;
+  const task = appState.tasks.find(t => t.id === taskId);
+  if (task) {
+    const extraSecs = extraMins * 60;
+    task.targetDuration = (task.targetDuration || 0) + extraSecs;
+    targetReachedTaskId = null;
+    showCustomToast('Timer Extended!', `Added +${extraMins} mins to ${task.name}`);
+    renderAll();
+    saveAppState();
+  }
+  const modal = document.getElementById('task-target-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function extendCurrentTaskCustom() {
+  const input = document.getElementById('input-custom-extend-mins');
+  const mins = parseInt(input ? input.value : 0);
+  if (mins && mins > 0) {
+    extendCurrentTask(mins);
+    if (input) input.value = '';
+  }
+}
+
+function extendTaskTargetById(id, mins) {
+  const task = appState.tasks.find(t => t.id === id);
+  if (task) {
+    task.targetDuration = (task.targetDuration || 0) + (mins * 60);
+    showCustomToast('Timer Extended!', `Added +${mins} mins to ${task.name}`);
+    renderAll();
+    saveAppState();
+  }
+}
+
+window.triggerTaskTargetModal = triggerTaskTargetModal;
+window.extendCurrentTask = extendCurrentTask;
+window.extendCurrentTaskCustom = extendCurrentTaskCustom;
+window.extendTaskTargetById = extendTaskTargetById;
+
 // --- Task Control Actions ---
 function completeTask(id) {
   const task = appState.tasks.find(t => t.id === id);
-  if (task) logActivity('task', `Completed task: ${task.name}`);
   if (!task) return;
   
-  task.completed = true;
-  playChime('taskComplete');
+  // Auto switch from compact view mode to full screen mode to view reflection prompt & full task details
+  if (document.body.classList.contains('mini-mode') || isWidgetMode) {
+    toggleMiniMode(false);
+  }
   
   if (appState.settings.notifications) {
-      window.electronAPI.sendNotification({ title: 'Task Completed!', body: `You finished: ${task.name}` });
-        showCustomToast('Task Completed!', `You finished: ${task.name}`);
-  }
-
-  // Show "What I learned" modal
-  const lessonOverlay = document.getElementById('lesson-overlay');
-  if (lessonOverlay) {
-    document.getElementById('lesson-input').value = '';
-    lessonOverlay.classList.remove('hidden');
-    
-    // Replace save button to clear old event listeners
-    const saveBtn = document.getElementById('save-lesson-btn');
-    const newSaveBtn = saveBtn.cloneNode(true);
-    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-    
-    newSaveBtn.addEventListener('click', () => {
-      const text = document.getElementById('lesson-input').value.trim();
-      if (text) {
-        logActivity('reflection', `Reflection for "${task.name}": ${text}`);
-      }
-      lessonOverlay.classList.add('hidden');
-    });
+    window.electronAPI.sendNotification({ title: 'Task Completed!', body: `You finished: ${task.name}` });
+    showCustomToast('Task Completed!', `You finished: ${task.name}`);
   }
 
   if (typeof addXP === 'function') addXP(50);
@@ -3164,12 +3362,8 @@ function completeTask(id) {
       activeTaskId = null;
     }
   }
-  
-  renderTasks();
-  renderTimer(); // Refresh active task display (sets next task name or General Session)
-  renderStats();
-  renderSelectedDayTasks();
-  saveAppState();
+
+  openCompletionModal(id);
 }
 
 function uncompleteTask(id) {
@@ -3271,6 +3465,18 @@ if (elMiniTimerPlayPause) {
 }
   elBtnReset.addEventListener('click', resetTimer);
   elBtnSkip.addEventListener('click', skipSession);
+  
+  const btnTakeBreak = document.getElementById('btn-take-break');
+  if (btnTakeBreak) {
+    btnTakeBreak.addEventListener('click', () => {
+      if (sessionType === 'shortBreak' || sessionType === 'longBreak') {
+        endBreakAndResumeFocus();
+      } else {
+        const modal = document.getElementById('break-picker-modal');
+        if (modal) modal.classList.remove('hidden');
+      }
+    });
+  }
   
   elBtnTogglePending.addEventListener('click', () => {
     document.getElementById('pending-section').classList.toggle('open');
@@ -3669,4 +3875,162 @@ window.addEventListener('beforeunload', handleAppCloseLog);
 
 if (window.electronAPI && window.electronAPI.onWindowClosing) {
   window.electronAPI.onWindowClosing(handleAppCloseLog);
+}
+
+// --- Completion Reflection Modal & Screenshot Uploader ---
+let pendingCompletionTaskId = null;
+let currentCompletionImageData = null;
+
+function openCompletionModal(taskId) {
+  pendingCompletionTaskId = taskId;
+  currentCompletionImageData = null;
+  const modal = document.getElementById('completion-modal');
+  const inputNote = document.getElementById('completion-note-input');
+  const previewContainer = document.getElementById('completion-image-preview-container');
+  const previewImg = document.getElementById('completion-image-preview');
+  const fileInput = document.getElementById('completion-image-file');
+  const btnClearImg = document.getElementById('btn-clear-completion-image');
+
+  if (inputNote) inputNote.value = '';
+  if (previewContainer) previewContainer.classList.add('hidden');
+  if (previewImg) previewImg.src = '';
+  if (fileInput) fileInput.value = '';
+  if (btnClearImg) btnClearImg.classList.add('hidden');
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function finalizeTaskCompletion(noteText, imageData) {
+  const modal = document.getElementById('completion-modal');
+  if (modal) modal.classList.add('hidden');
+
+  if (!pendingCompletionTaskId) return;
+  const task = appState.tasks.find(t => t.id === pendingCompletionTaskId);
+  if (task) {
+    task.completed = true;
+    task.completedAt = new Date().toISOString();
+    if (noteText) task.completionNote = noteText;
+    if (imageData) task.completionImage = imageData;
+    logActivity('task', `Completed task: ${task.name}`);
+    playChime('taskComplete');
+    if (typeof addXP === 'function') addXP(50);
+    renderAll();
+    saveAppState();
+  }
+  pendingCompletionTaskId = null;
+  currentCompletionImageData = null;
+}
+
+function openImageViewer(imgSrc) {
+  const modal = document.getElementById('image-viewer-modal');
+  const img = document.getElementById('image-viewer-img');
+  if (modal && img) {
+    img.src = imgSrc;
+    modal.classList.remove('hidden');
+  }
+}
+
+window.openImageViewer = openImageViewer;
+window.openCompletionModal = openCompletionModal;
+window.finalizeTaskCompletion = finalizeTaskCompletion;
+
+const elBtnCloseCompletionModal = document.getElementById('btn-close-completion-modal');
+const elBtnSaveCompletion = document.getElementById('btn-save-completion');
+const elBtnSkipCompletion = document.getElementById('btn-skip-completion');
+const elBtnUploadCompletionImage = document.getElementById('btn-upload-completion-image');
+const elCompletionImageFile = document.getElementById('completion-image-file');
+const elBtnClearCompletionImage = document.getElementById('btn-clear-completion-image');
+const elBtnCloseImageViewer = document.getElementById('btn-close-image-viewer');
+const elImageViewerModal = document.getElementById('image-viewer-modal');
+
+if (elBtnCloseCompletionModal) {
+  elBtnCloseCompletionModal.addEventListener('click', () => {
+    const modal = document.getElementById('completion-modal');
+    if (modal) modal.classList.add('hidden');
+    pendingCompletionTaskId = null;
+  });
+}
+
+if (elBtnSkipCompletion) {
+  elBtnSkipCompletion.addEventListener('click', () => {
+    finalizeTaskCompletion('', null);
+  });
+}
+
+if (elBtnSaveCompletion) {
+  elBtnSaveCompletion.addEventListener('click', () => {
+    const input = document.getElementById('completion-note-input');
+    const noteText = input ? input.value.trim() : '';
+    finalizeTaskCompletion(noteText, currentCompletionImageData);
+  });
+}
+
+if (elBtnUploadCompletionImage && elCompletionImageFile) {
+  elBtnUploadCompletionImage.addEventListener('click', () => {
+    elCompletionImageFile.click();
+  });
+  
+  elCompletionImageFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        currentCompletionImageData = evt.target.result;
+        const previewImg = document.getElementById('completion-image-preview');
+        const previewContainer = document.getElementById('completion-image-preview-container');
+        if (previewImg) previewImg.src = currentCompletionImageData;
+        if (previewContainer) previewContainer.classList.remove('hidden');
+        if (elBtnClearCompletionImage) elBtnClearCompletionImage.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+if (elBtnClearCompletionImage) {
+  elBtnClearCompletionImage.addEventListener('click', () => {
+    currentCompletionImageData = null;
+    const previewContainer = document.getElementById('completion-image-preview-container');
+    const previewImg = document.getElementById('completion-image-preview');
+    if (previewContainer) previewContainer.classList.add('hidden');
+    if (previewImg) previewImg.src = '';
+    if (elCompletionImageFile) elCompletionImageFile.value = '';
+    elBtnClearCompletionImage.classList.add('hidden');
+  });
+}
+
+if (elBtnCloseImageViewer && elImageViewerModal) {
+  elBtnCloseImageViewer.addEventListener('click', () => {
+    elImageViewerModal.classList.add('hidden');
+  });
+  elImageViewerModal.addEventListener('click', (e) => {
+    if (e.target === elImageViewerModal) {
+      elImageViewerModal.classList.add('hidden');
+    }
+  });
+}
+
+const elCompletionNoteInput = document.getElementById('completion-note-input');
+if (elCompletionNoteInput) {
+  elCompletionNoteInput.addEventListener('paste', (e) => {
+    const items = (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData))?.items;
+    if (items) {
+      for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            currentCompletionImageData = evt.target.result;
+            const previewImg = document.getElementById('completion-image-preview');
+            const previewContainer = document.getElementById('completion-image-preview-container');
+            if (previewImg) previewImg.src = currentCompletionImageData;
+            if (previewContainer) previewContainer.classList.remove('hidden');
+            if (elBtnClearCompletionImage) elBtnClearCompletionImage.classList.remove('hidden');
+          };
+          reader.readAsDataURL(blob);
+        }
+      }
+    }
+  });
 }
