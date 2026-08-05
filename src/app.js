@@ -2143,7 +2143,7 @@ function renderTasks() { try {
       return (task.scheduleDate || (task.plannerDays && task.plannerDays.length > 0) || task.plannerDay) && !task.completed;
     }
     const wsMatch = activeWorkspace === 'all' || task.workspace === activeWorkspace;
-    const activeDate = isTaskActiveOnDate(task, today);
+    const activeDate = isTaskActiveOnDate(task, today) || task.completed;
     return wsMatch && activeDate;
   });
   
@@ -3351,6 +3351,12 @@ function completeTask(id) {
   const task = appState.tasks.find(t => t.id === id);
   if (!task) return;
   
+  // Set task completed immediately so it moves to Completed section
+  task.completed = true;
+  task.completedAt = new Date().toISOString();
+  logActivity('task', `Completed task: ${task.name}`);
+  playChime('taskComplete');
+  
   // Auto switch from compact view mode to full screen mode to view reflection prompt & full task details
   if (document.body.classList.contains('mini-mode') || isWidgetMode) {
     toggleMiniMode(false);
@@ -3374,6 +3380,10 @@ function completeTask(id) {
       activeTaskId = null;
     }
   }
+
+  // Immediately render UI to update Completed Tasks list and save state
+  renderAll();
+  saveAppState();
 
   openCompletionModal(id);
 }
