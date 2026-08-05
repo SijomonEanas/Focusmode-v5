@@ -69,6 +69,8 @@ var appState = {
     shortBreakMinutes: 5,
     longBreakMinutes: 15,
     soundVolume: 0.5,
+    screensaverTimeoutMinutes: 1,
+    idleTimeoutMinutes: 3,
     lastActiveDate: '' // Focus date string e.g. "Mon Jul 13 2026"
   }
 };
@@ -2939,6 +2941,11 @@ function syncSettingsToUI() {
   elSettingLongBreak.value = appState.settings.longBreakMinutes;
   elSettingSoundVolume.value = appState.settings.soundVolume;
   
+  const elSettingScreensaverTimeout = document.getElementById('setting-screensaver-timeout');
+  const elSettingIdleTimeout = document.getElementById('setting-idle-timeout');
+  if (elSettingScreensaverTimeout) elSettingScreensaverTimeout.value = appState.settings.screensaverTimeoutMinutes || 1;
+  if (elSettingIdleTimeout) elSettingIdleTimeout.value = appState.settings.idleTimeoutMinutes || 3;
+
   const elSettingAutoStartBreak = document.getElementById('setting-auto-start-break');
   if (elSettingAutoStartBreak) {
     elSettingAutoStartBreak.checked = appState.settings.autoStartBreak === true;
@@ -2962,6 +2969,11 @@ elBtnSaveSettings.addEventListener('click', async () => {
   const newLongBrk = parseInt(elSettingLongBreak.value) || 15;
   const newVolume = parseFloat(elSettingSoundVolume.value);
   
+  const elSettingScreensaverTimeout = document.getElementById('setting-screensaver-timeout');
+  const elSettingIdleTimeout = document.getElementById('setting-idle-timeout');
+  if (elSettingScreensaverTimeout) appState.settings.screensaverTimeoutMinutes = parseInt(elSettingScreensaverTimeout.value) || 1;
+  if (elSettingIdleTimeout) appState.settings.idleTimeoutMinutes = parseInt(elSettingIdleTimeout.value) || 3;
+
   const elSettingAutoStartBreak = document.getElementById('setting-auto-start-break');
   if (elSettingAutoStartBreak) {
     appState.settings.autoStartBreak = elSettingAutoStartBreak.checked;
@@ -3711,7 +3723,6 @@ function generateCoachingReport(stats) {
 }
 
 // --- AFK Idle Pausing & Screensaver Logic ---
-const idleTimeoutMinutes = 1;
 const elScreensaverOverlay = document.getElementById('screensaver-overlay');
 const elScreensaverImage = document.getElementById('screensaver-image');
 const elScreensaverBg = document.getElementById('screensaver-bg');
@@ -3761,22 +3772,29 @@ function hideScreensaver() {
 
 // Dismiss screensaver on any local app interaction
 window.addEventListener('click', hideScreensaver);
+window.addEventListener('mousemove', hideScreensaver);
+window.addEventListener('keydown', hideScreensaver);
 
 setInterval(async () => {
   if (window.electronAPI && window.electronAPI.getSystemIdleTime) {
     try {
       const idleSeconds = await window.electronAPI.getSystemIdleTime();
-      if (idleSeconds > idleTimeoutMinutes * 60) {
-        // Automatically launch the Thought of the Day Screensaver
+      const ssMins = (appState.settings && appState.settings.screensaverTimeoutMinutes) || 1;
+      const idleMins = (appState.settings && appState.settings.idleTimeoutMinutes) || 3;
+
+      // 1. Screensaver activates at 1 minute of inactivity
+      if (idleSeconds >= ssMins * 60) {
         showScreensaver();
-        
-        // Auto-pause timer if it was running
+      }
+
+      // 2. Focus timer auto-pauses at 3 minutes of idle time
+      if (idleSeconds >= idleMins * 60) {
         if (timerRunning) {
           pauseTimer();
           logActivity('timer', 'Auto-paused (User Idle)');
           if (appState.settings.notifications) {
-            window.electronAPI.sendNotification({ title: 'Timer Paused', body: `You were idle for ${idleTimeoutMinutes} minute(s), so we paused your focus timer.` });
-            showCustomToast('Timer Paused', `You were idle for ${idleTimeoutMinutes} minute(s), so we paused your focus timer.`);
+            window.electronAPI.sendNotification({ title: 'Timer Paused', body: `You were idle for ${idleMins} minute(s), so we paused your focus timer.` });
+            showCustomToast('Timer Paused', `You were idle for ${idleMins} minute(s), so we paused your focus timer.`);
           }
         }
       }
@@ -3784,7 +3802,7 @@ setInterval(async () => {
       console.error("Failed to get OS idle time", e);
     }
   }
-}, 30000); // Check every 30 seconds
+}, 5000); // Check every 5 seconds for prompt response
 
 // --- Custom In-App Toast Notification System ---
 function showCustomToast(title, body) {

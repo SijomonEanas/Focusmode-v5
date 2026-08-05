@@ -922,6 +922,21 @@
             <input type="range" id="setting-sound-volume" class="slider-input" min="0" max="1" step="0.1" value="0.5">
           </div>
           <div class="settings-group" style="margin-top: 15px;">
+            <label>Screensaver & AFK Idle (Minutes)</label>
+            <div class="timers-config-row" style="margin-top: 8px;">
+              <div class="timer-config-item">
+                <span class="config-label">Screensaver</span>
+                <input type="number" id="setting-screensaver-timeout" value="1" min="1" max="60">
+              </div>
+              <div class="timer-config-item">
+                <span class="config-label">Idle Pause</span>
+                <input type="number" id="setting-idle-timeout" value="3" min="1" max="120">
+              </div>
+            </div>
+            <p class="settings-desc" style="margin-top: 6px;">Screensaver activates after 1 min idle. Timer auto-pauses after 3 mins idle.</p>
+          </div>
+
+          <div class="settings-group" style="margin-top: 15px;">
             <label>Screensaver Images</label>
             <p class="settings-desc">Add your custom wallpaper & quote images (.png, .jpg, .webp) to show during AFK idle screensaver mode.</p>
             <button id="btn-open-screensaver-folder" class="control-btn" style="width: 100%; margin-top: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid var(--theme-color); font-weight: 600;">🖼️ Open Screensaver Images Folder</button>
