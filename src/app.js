@@ -77,6 +77,7 @@ var appState = {
 
 // State Variables
 let activeTaskId = null;
+let pendingScreensaverReflectionTaskId = null;
 let currentTimer = 0;
 let sessionType = 'focus'; // 'focus' | 'shortBreak' | 'longBreak'
 let timerRunning = false;
@@ -1081,24 +1082,17 @@ function renderTimer() { try {
     elTimerStateLabel.style.color = 'var(--color-purple)';
     if (btnTakeBreak) {
       btnTakeBreak.innerHTML = '☕ Break';
-      btnTakeBreak.style.background = 'rgba(255,255,255,0.08)';
-      btnTakeBreak.style.color = '#fff';
+      btnTakeBreak.className = 'control-btn btn-pill secondary-btn';
+      btnTakeBreak.removeAttribute('style');
     }
-  } else if (sessionType === 'shortBreak') {
-    elTimerStateLabel.textContent = `☕ Break (${Math.ceil(currentTimer / 60)}m)`;
-    elTimerStateLabel.style.color = 'var(--color-amber)';
+  } else if (sessionType === 'shortBreak' || sessionType === 'longBreak') {
+    const labelText = sessionType === 'shortBreak' ? `☕ Break (${Math.ceil(currentTimer / 60)}m)` : `☕ Long Break (${Math.ceil(currentTimer / 60)}m)`;
+    elTimerStateLabel.textContent = labelText;
+    elTimerStateLabel.style.color = sessionType === 'shortBreak' ? 'var(--color-amber)' : 'var(--color-cyan)';
     if (btnTakeBreak) {
       btnTakeBreak.innerHTML = '▶ Resume Focus';
-      btnTakeBreak.style.background = 'var(--gradient-focus)';
-      btnTakeBreak.style.color = '#fff';
-    }
-  } else if (sessionType === 'longBreak') {
-    elTimerStateLabel.textContent = `☕ Long Break (${Math.ceil(currentTimer / 60)}m)`;
-    elTimerStateLabel.style.color = 'var(--color-cyan)';
-    if (btnTakeBreak) {
-      btnTakeBreak.innerHTML = '▶ Resume Focus';
-      btnTakeBreak.style.background = 'var(--gradient-focus)';
-      btnTakeBreak.style.color = '#fff';
+      btnTakeBreak.className = 'control-btn btn-pill primary-pill-btn';
+      btnTakeBreak.removeAttribute('style');
     }
   }
 
@@ -2970,6 +2964,11 @@ function syncSettingsToUI() {
   if (elSettingAutoStartBreak) {
     elSettingAutoStartBreak.checked = appState.settings.autoStartBreak === true;
   }
+
+  const elSettingShowReflection = document.getElementById('setting-show-reflection');
+  if (elSettingShowReflection) {
+    elSettingShowReflection.checked = appState.settings.showReflectionModal !== false;
+  }
 }
 
 elBtnPreviewSound.addEventListener('click', () => {
@@ -2997,6 +2996,11 @@ elBtnSaveSettings.addEventListener('click', async () => {
   const elSettingAutoStartBreak = document.getElementById('setting-auto-start-break');
   if (elSettingAutoStartBreak) {
     appState.settings.autoStartBreak = elSettingAutoStartBreak.checked;
+  }
+
+  const elSettingShowReflection = document.getElementById('setting-show-reflection');
+  if (elSettingShowReflection) {
+    appState.settings.showReflectionModal = elSettingShowReflection.checked;
   }
   
   if (newAutostart !== appState.settings.autostart) {
@@ -3437,7 +3441,10 @@ function completeTask(id) {
   renderAll();
   saveAppState();
 
-  openCompletionModal(id);
+  pendingScreensaverReflectionTaskId = id;
+  if (typeof screensaverActive !== 'undefined' && screensaverActive) {
+    openCompletionModal(id);
+  }
 }
 
 function uncompleteTask(id) {
@@ -3835,6 +3842,10 @@ async function showScreensaver() {
     elScreensaverImage.style.opacity = '1.0';
     if (elScreensaverBg) elScreensaverBg.style.opacity = '1.0';
   }, 50);
+
+  if (pendingScreensaverReflectionTaskId) {
+    openCompletionModal(pendingScreensaverReflectionTaskId);
+  }
 }
 
 function hideScreensaver() {
@@ -4071,6 +4082,7 @@ function finalizeTaskCompletion(noteText, imageData, videoData, docData) {
     saveAppState();
   }
   pendingCompletionTaskId = null;
+  pendingScreensaverReflectionTaskId = null;
   currentCompletionImageData = null;
   currentCompletionVideoData = null;
   currentCompletionDocData = null;
