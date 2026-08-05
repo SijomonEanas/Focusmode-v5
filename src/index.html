@@ -335,8 +335,12 @@
 
         <div id="dashboard-section" class="executive-dashboard-view hidden">
           <div class="dashboard-header-bar">
-            <h2>Monthly Performance (Last 30 Days)</h2>
-            <div class="dashboard-filters">
+            <h2 id="dashboard-performance-title">Weekly Performance (Last 7 Days)</h2>
+            <div class="dashboard-filters" style="display: flex; align-items: center; gap: 10px;">
+              <select id="analytics-timeframe-select" class="theme-select" style="padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 8px; background: rgba(0,0,0,0.45); color: var(--theme-color, #a855f7); border: 1px solid var(--theme-color, #a855f7); cursor: pointer;">
+                <option value="7" selected>📅 Last 7 Days (Weekly)</option>
+                <option value="30">📆 Last 30 Days (Monthly)</option>
+              </select>
               <button class="control-btn" id="btn-refresh-dash">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 Refresh
