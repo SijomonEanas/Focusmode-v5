@@ -1735,7 +1735,7 @@ function renderSelectedDayTasks() {
             return true;
           });
           
-          let detailsHtml = '';
+          let detailsHtml = `<button class="control-btn" onclick="openTaskDetailsModal('${task.id}'); event.stopPropagation();" style="padding: 6px 12px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.5); color: #c084fc; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; width: 100%; justify-content: center;">🔍 View Full Details in Big Window</button>`;
 
           // Task Notes
           if (task.notes) {
@@ -4396,3 +4396,129 @@ if (elCompletionNoteInput) {
     }
   });
 }
+
+// --- Big Window Task Details & Proof Viewer Modal ---
+function openTaskDetailsModal(taskId) {
+  const task = appState.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const modal = document.getElementById('task-details-modal');
+  const titleEl = document.getElementById('task-details-modal-title');
+  const bodyEl = document.getElementById('task-details-modal-body');
+  const btnEdit = document.getElementById('btn-modal-edit-reflection');
+
+  if (titleEl) titleEl.textContent = task.name;
+
+  if (btnEdit) {
+    btnEdit.onclick = () => {
+      if (modal) modal.classList.add('hidden');
+      openCompletionModal(task.id);
+    };
+  }
+
+  let bodyHtml = '';
+
+  let statusBadge = task.completed ? '<span style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.4);">✓ COMPLETED</span>' : '<span style="background: rgba(234, 179, 8, 0.2); color: #facc15; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(234, 179, 8, 0.4);">⏳ IN PROGRESS</span>';
+  let wsLabel = (task.workspace || 'GENERAL').toUpperCase();
+
+  bodyHtml += `
+    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        ${statusBadge}
+        <span style="background: rgba(168, 85, 247, 0.15); color: #c084fc; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; border: 1px solid rgba(168, 85, 247, 0.3);">${wsLabel}</span>
+      </div>
+      ${task.completedAt ? `<div style="font-size: 0.78rem; color: var(--text-muted);">Completed: ${new Date(task.completedAt).toLocaleString()}</div>` : ''}
+    </div>
+  `;
+
+  if (task.completionNote) {
+    bodyHtml += `
+      <div style="background: rgba(168, 85, 247, 0.08); padding: 14px 16px; border-left: 4px solid var(--theme-color); border-radius: 10px;">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 6px;">💡 Reflection & Learning Notes:</div>
+        <div style="font-size: 0.92rem; color: #e2e8f0; font-style: italic; line-height: 1.5;">"${task.completionNote}"</div>
+      </div>
+    `;
+  }
+
+  if (task.completionImage) {
+    bodyHtml += `
+      <div style="background: rgba(0,0,0,0.4); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 10px;">🖼️ Screenshot Proof (Full View):</div>
+        <img src="${task.completionImage}" onclick="openImageViewer('${task.completionImage}')" title="Click to view full screen" style="width: 100%; max-height: 480px; object-fit: contain; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; background: #000; display: block;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; text-align: center;">Click image to view in fullscreen view</div>
+      </div>
+    `;
+  }
+
+  if (task.completionVideo) {
+    bodyHtml += `
+      <div style="background: rgba(0,0,0,0.4); padding: 14px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.3);">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #60a5fa; margin-bottom: 10px;">🎥 Video Recording Proof:</div>
+        <video controls src="${task.completionVideo}" style="width: 100%; max-height: 360px; border-radius: 10px; background: #000; border: 1px solid rgba(59, 130, 246, 0.4);"></video>
+      </div>
+    `;
+  }
+
+  if (task.completionDocument && task.completionDocument.data) {
+    bodyHtml += `
+      <div style="background: rgba(16, 185, 129, 0.08); padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3); display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.5rem;">📄</span>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #10b981;">Attached Document / File</div>
+            <div style="font-size: 0.8rem; color: #e2e8f0; margin-top: 2px;">${task.completionDocument.name || 'Document File'}</div>
+          </div>
+        </div>
+        <a href="${task.completionDocument.data}" download="${task.completionDocument.name || 'attachment'}" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.5); border-radius: 8px; color: #34d399; font-size: 0.85rem; text-decoration: none; font-weight: 700;">⬇️ Download File</a>
+      </div>
+    `;
+  }
+
+  if (task.notes) {
+    bodyHtml += `
+      <div style="background: rgba(255,255,255,0.03); padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 6px;">📝 Task Notes & Description:</div>
+        <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5;">${task.notes}</div>
+      </div>
+    `;
+  }
+
+  if (task.subtasks && task.subtasks.length > 0) {
+    const completedSub = task.subtasks.filter(s => s.completed).length;
+    const subItems = task.subtasks.map(st => `
+      <div style="padding: 6px 10px; background: rgba(255,255,255,0.03); border-radius: 6px; font-size: 0.85rem; color: ${st.completed ? '#94a3b8' : '#fff'}; text-decoration: ${st.completed ? 'line-through' : 'none'}; display: flex; align-items: center; gap: 8px;">
+        <span style="color: ${st.completed ? '#10b981' : '#64748b'}; font-weight: 700;">${st.completed ? '✓' : '○'}</span>
+        ${st.name}
+      </div>
+    `).join('');
+    bodyHtml += `
+      <div style="background: rgba(0,0,0,0.3); padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 8px;">📋 Subtasks Checklist (${completedSub}/${task.subtasks.length}):</div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">${subItems}</div>
+      </div>
+    `;
+  }
+
+  const taskLogs = (appState.activityLog || []).filter(l => l.message && l.message.toLowerCase().includes(task.name.toLowerCase()));
+  if (taskLogs.length > 0) {
+    const logItems = taskLogs.map(l => `
+      <div style="padding: 6px 10px; border-left: 3px solid var(--theme-color); background: rgba(255,255,255,0.02); border-radius: 0 6px 6px 0; font-size: 0.82rem;">
+        <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">${l.date} ${l.time ? 'at ' + l.time : ''}</div>
+        <div style="color: #e2e8f0; margin-top: 2px;">${l.message}</div>
+      </div>
+    `).join('');
+    bodyHtml += `
+      <div style="background: rgba(0,0,0,0.3); padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 8px;">⏱️ Activity Log History:</div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">${logItems}</div>
+      </div>
+    `;
+  }
+
+  if (bodyEl) bodyEl.innerHTML = bodyHtml;
+
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+window.openTaskDetailsModal = openTaskDetailsModal;
