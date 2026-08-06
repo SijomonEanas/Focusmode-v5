@@ -912,16 +912,60 @@ function renderActivityLog() {
         `;
       }
 
-      let thumbHtml = '';
+      let logoIconsHtml = '';
+      const isReflectionLog = log.type === 'reflection' || (log.message && log.message.startsWith('Reflection for task'));
+
+      let matchingTask = null;
       if (appState.tasks && Array.isArray(appState.tasks)) {
-        const matchingTask = appState.tasks.find(t => t.name && (log.message || '').toLowerCase().includes(t.name.toLowerCase()));
-        if (matchingTask) {
-          if (matchingTask.completionImage) {
-            thumbHtml = `<img src="${matchingTask.completionImage}" onclick="openImageViewer('${matchingTask.completionImage}'); event.stopPropagation();" title="Click thumbnail to view full screen" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.25); cursor: pointer; flex-shrink: 0; margin-left: 8px; background: #000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">`;
-          } else if (matchingTask.completionVideo) {
-            thumbHtml = `<div onclick="openTaskDetailsModal('${matchingTask.id}'); event.stopPropagation();" title="Click to view video proof" style="width: 44px; height: 44px; border-radius: 6px; border: 1.5px solid rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-left: 8px; color: #60a5fa; font-size: 18px;">🎥</div>`;
+        matchingTask = appState.tasks.find(t => (log.taskId && t.id === log.taskId) || (t.name && (log.message || '').toLowerCase().includes(t.name.toLowerCase())));
+      }
+
+      const logHasNote = log.hasNote || (isReflectionLog && matchingTask && matchingTask.completionNote);
+      const logHasImage = log.hasImage || (isReflectionLog && matchingTask && matchingTask.completionImage);
+      const logHasVideo = log.hasVideo || (isReflectionLog && matchingTask && matchingTask.completionVideo);
+      const logHasDoc = log.hasDoc || (isReflectionLog && matchingTask && matchingTask.completionDocument);
+
+      const tId = matchingTask ? matchingTask.id : '';
+
+      if (logHasNote || logHasImage || logHasVideo || logHasDoc) {
+        let icons = [];
+
+        // 1. Small Notepad Logo for Reflection Note (📝)
+        if (logHasNote) {
+          icons.push(`
+            <span onclick="${tId ? `openTaskDetailsModal('${tId}')` : ''}; event.stopPropagation();" title="Reflection Note Written (Click to view)" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; font-size: 14px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">📝</span>
+          `);
+        }
+
+        // 2. Small Image Logo / Thumbnail for Screenshot Proof (🖼️)
+        if (logHasImage) {
+          const imgSrc = matchingTask ? matchingTask.completionImage : '';
+          if (imgSrc) {
+            icons.push(`
+              <img src="${imgSrc}" onclick="openImageViewer('${imgSrc}'); event.stopPropagation();" title="Screenshot Proof Attached (Click to enlarge full screen)" style="width: 28px; height: 28px; object-fit: cover; border-radius: 6px; border: 1.5px solid var(--color-cyan); cursor: pointer; background: #000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+            `);
+          } else {
+            icons.push(`
+              <span onclick="${tId ? `openTaskDetailsModal('${tId}')` : ''}; event.stopPropagation();" title="Screenshot Image Attached" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(0, 230, 153, 0.2); border: 1px solid rgba(0, 230, 153, 0.4); color: #00e699; font-size: 14px; cursor: pointer;">🖼️</span>
+            `);
           }
         }
+
+        // 3. Small Play Button Logo for Video Proof (▶️)
+        if (logHasVideo) {
+          icons.push(`
+            <span onclick="${tId ? `openTaskDetailsModal('${tId}')` : ''}; event.stopPropagation();" title="Video Proof Attached (Click to view/play)" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 14px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">▶️</span>
+          `);
+        }
+
+        // 4. Small File Document Logo for Document Attachment (📄)
+        if (logHasDoc) {
+          icons.push(`
+            <span onclick="${tId ? `openTaskDetailsModal('${tId}')` : ''}; event.stopPropagation();" title="Document File Attached (Click to view/download)" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 14px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">📄</span>
+          `);
+        }
+
+        logoIconsHtml = `<div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: 8px;">${icons.join('')}</div>`;
       }
 
       card.className = `premium-history-card ${cardStyleClass}`;
@@ -936,7 +980,7 @@ function renderActivityLog() {
           </div>
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
             <div class="history-msg-text" style="flex: 1;">${log.message || ''}</div>
-            ${thumbHtml}
+            ${logoIconsHtml}
           </div>
           ${metaHtml}
         </div>
@@ -4186,10 +4230,27 @@ function finalizeTaskCompletion(noteText, imageData, videoData, docData) {
     if (imageData !== undefined) task.completionImage = imageData;
     if (videoData !== undefined) task.completionVideo = videoData;
     if (docData !== undefined) task.completionDocument = docData;
-    logActivity('task', `Completed task: ${task.name}`);
-    if (noteText || imageData || videoData || docData) {
-      const summary = noteText ? `"${noteText}"` : 'Attachment proof added';
-      logActivity('reflection', `Reflection for task "${task.name}": ${summary}`);
+    const hasNote = !!(noteText && noteText.trim());
+    const hasImage = !!(task.completionImage);
+    const hasVideo = !!(task.completionVideo);
+    const hasDoc = !!(task.completionDocument);
+
+    logActivity('task', `Completed task: ${task.name}`, {
+      taskId: task.id,
+      hasNote,
+      hasImage,
+      hasVideo,
+      hasDoc
+    });
+    if (hasNote || hasImage || hasVideo || hasDoc) {
+      const summary = hasNote ? `"${noteText.trim()}"` : 'Attachment proof added';
+      logActivity('reflection', `Reflection for task "${task.name}": ${summary}`, {
+        taskId: task.id,
+        hasNote,
+        hasImage,
+        hasVideo,
+        hasDoc
+      });
     }
     playChime('taskComplete');
     if (typeof addXP === 'function') addXP(50);
