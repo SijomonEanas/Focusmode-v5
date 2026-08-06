@@ -124,7 +124,7 @@ function initStations() {
   }
 }
 
-// Quotes Database
+// Quotes & Thoughts Database
 const quotes = [
   { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
   { text: "Focus is a matter of deciding what things you're not going to do.", author: "John Carmack" },
@@ -133,7 +133,22 @@ const quotes = [
   { text: "It is not that we have a short time to live, but that we waste a lot of it.", author: "Seneca" },
   { text: "Concentrate all your thoughts upon the work at hand. The sun's rays do not burn until brought to a focus.", author: "Alexander Graham Bell" },
   { text: "Great things are done by a series of small things brought together.", author: "Vincent Van Gogh" },
-  { text: "If you spend too much time thinking about a thing, you'll never get it done.", author: "Bruce Lee" }
+  { text: "If you spend too much time thinking about a thing, you'll never get it done.", author: "Bruce Lee" },
+  { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" },
+  { text: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma" },
+  { text: "Do something today that your future self will thank you for.", author: "Sean Patrick Flanery" },
+  { text: "Action is the foundational key to all success.", author: "Pablo Picasso" },
+  { text: "Disciplined attention is the foundation of extraordinary achievement.", author: "Marcus Aurelius" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "Don't count the days, make the days count.", author: "Muhammad Ali" },
+  { text: "Success isn't always about greatness. It's about consistency.", author: "Dwayne Johnson" },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
+  { text: "Mastering others is strength. Mastering yourself is true power.", author: "Lao Tzu" },
+  { text: "Habits are the compound interest of self-improvement.", author: "James Clear" },
+  { text: "Simplicity boils down to two steps: Identify the essential. Eliminate the rest.", author: "Leo Babauta" },
+  { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+  { text: "What we fear doing most is usually what we most need to do.", author: "Ralph Waldo Emerson" }
 ];
 
 // DOM Elements
