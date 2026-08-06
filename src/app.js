@@ -4442,12 +4442,12 @@ function openTaskDetailsModal(taskId) {
 
   if (task.completionImage) {
     bodyHtml += `
-      <div style="background: rgba(0,0,0,0.5); padding: 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);">
-        <div style="font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-          <span>🖼️ Screenshot Proof (Full View):</span>
-          <span style="font-size: 0.75rem; color: var(--color-cyan); font-weight: 500;">Click image for 100% full screen</span>
+      <div style="background: rgba(0,0,0,0.4); padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+          <span>🖼️ Screenshot Proof:</span>
+          <span style="font-size: 0.75rem; color: var(--color-cyan); font-weight: 600;">🔍 Click image to enlarge full screen</span>
         </div>
-        <img src="${task.completionImage}" onclick="openImageViewer('${task.completionImage}')" title="Click to view 100% full screen" style="width: 100%; max-height: 650px; min-height: 380px; object-fit: contain; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); cursor: pointer; background: #050505; display: block;">
+        <img src="${task.completionImage}" onclick="openImageViewer('${task.completionImage}')" title="Click to view full screen" style="max-height: 240px; width: auto; max-width: 100%; object-fit: contain; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.2); cursor: pointer; background: #000; display: block; margin: 0 auto; transition: transform 0.2s ease, border-color 0.2s ease;" onmouseover="this.style.transform='scale(1.02)'; this.style.borderColor='var(--color-cyan)';" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='rgba(255,255,255,0.2)';">
       </div>
     `;
   }
