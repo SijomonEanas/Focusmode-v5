@@ -2139,7 +2139,7 @@ function renderTasks() { try {
   // Main tasks list shows tasks active TODAY (or scheduled tasks when 'scheduled' workspace is selected)
   const activeTodayTasks = appState.tasks.filter(task => {
     if (activeWorkspace === 'scheduled') {
-      return (task.scheduleDate || (task.plannerDays && task.plannerDays.length > 0) || task.plannerDay) && !task.completed;
+      return !!(task.scheduleDate || (task.plannerDays && task.plannerDays.length > 0) || task.plannerDay);
     }
     const wsMatch = activeWorkspace === 'all' || task.workspace === activeWorkspace;
     const activeDate = isTaskActiveOnDate(task, today) || task.completed;
@@ -3274,6 +3274,13 @@ function extendTimer(extraMins) {
 
 window.extendTimer = extendTimer;
 
+function extendCurrentTaskCustom() {
+  const input = document.getElementById('input-custom-extend-mins');
+  const val = input ? parseInt(input.value) : 10;
+  extendTimer(val || 10);
+}
+window.extendCurrentTaskCustom = extendCurrentTaskCustom;
+
 function timerFinished() {
   pauseTimer();
   if (sessionType === 'focus') {
@@ -3305,8 +3312,9 @@ function timerFinished() {
       finishBtn.parentNode.replaceChild(newFinishBtn, finishBtn);
       newFinishBtn.addEventListener('click', () => {
         if (modal) modal.classList.add('hidden');
-        if (task) {
-          openCompletionModal(task.id);
+        const targetId = (task && task.id) || targetReachedTaskId || activeTaskId;
+        if (targetId) {
+          completeTask(targetId);
         } else {
           showCustomToast('Great job!', 'Completed focus session.');
         }
@@ -3442,9 +3450,7 @@ function completeTask(id) {
   saveAppState();
 
   pendingScreensaverReflectionTaskId = id;
-  if (typeof screensaverActive !== 'undefined' && screensaverActive) {
-    openCompletionModal(id);
-  }
+  openCompletionModal(id);
 }
 
 function uncompleteTask(id) {
@@ -3823,6 +3829,14 @@ if (elScreensaverImage) {
 
 async function showScreensaver() {
   if (screensaverActive) return;
+
+  // Don't show screensaver if task reflection modal or goal reached modal is visible
+  const completionModal = document.getElementById('completion-modal');
+  if (completionModal && !completionModal.classList.contains('hidden')) return;
+
+  const targetModal = document.getElementById('task-target-modal');
+  if (targetModal && !targetModal.classList.contains('hidden')) return;
+
   screensaverActive = true;
   
   // Load a fresh random quote image
@@ -3842,21 +3856,21 @@ async function showScreensaver() {
     elScreensaverImage.style.opacity = '1.0';
     if (elScreensaverBg) elScreensaverBg.style.opacity = '1.0';
   }, 50);
-
-  if (pendingScreensaverReflectionTaskId) {
-    openCompletionModal(pendingScreensaverReflectionTaskId);
-  }
 }
 
-function hideScreensaver() {
-  if (!screensaverActive) return;
+function hideScreensaver(immediate = false) {
+  if (!screensaverActive && (!elScreensaverOverlay || elScreensaverOverlay.classList.contains('hidden'))) return;
   screensaverActive = false;
   
   elScreensaverImage.style.opacity = '0';
   if (elScreensaverBg) elScreensaverBg.style.opacity = '0';
-  setTimeout(() => {
-    elScreensaverOverlay.classList.add('hidden');
-  }, 1000); // Matches CSS transition duration
+  if (immediate) {
+    if (elScreensaverOverlay) elScreensaverOverlay.classList.add('hidden');
+  } else {
+    setTimeout(() => {
+      if (elScreensaverOverlay) elScreensaverOverlay.classList.add('hidden');
+    }, 1000); // Matches CSS transition duration
+  }
 }
 
 // Dismiss screensaver on any local app interaction
@@ -3996,6 +4010,9 @@ function openCompletionModal(taskId) {
   currentCompletionVideoData = null;
   currentCompletionDocData = null;
 
+  // Dismiss screensaver if active so reflection modal is shown on main dashboard
+  hideScreensaver(true);
+
   const modal = document.getElementById('completion-modal');
   const inputNote = document.getElementById('completion-note-input');
   
@@ -4059,7 +4076,16 @@ function openCompletionModal(taskId) {
     }
   }
 
-  if (modal) modal.classList.remove('hidden');
+  if (document.body.classList.contains('mini-mode') || isWidgetMode) {
+    toggleMiniMode(false);
+  }
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+      if (inputNote) inputNote.focus();
+    }, 100);
+  }
 }
 
 function finalizeTaskCompletion(noteText, imageData, videoData, docData) {

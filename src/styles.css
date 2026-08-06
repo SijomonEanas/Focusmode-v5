@@ -3704,3 +3704,16 @@ h1, h2, h3, h4, h5, h6,
   border-color: var(--color-purple) !important;
   transform: scale(1.06) !important;
 }
+
+/* Center Task Completion Reflection Modal on screen & fix backdrop */
+#completion-modal {
+  justify-content: center !important;
+  align-items: center !important;
+  background: rgba(6, 4, 12, 0.75) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+#completion-modal .modal-content {
+  margin: auto !important;
+}
+

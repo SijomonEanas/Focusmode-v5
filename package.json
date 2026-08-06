@@ -9,7 +9,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager . FocusMode --platform=win32 --arch=x64 --out=dist --icon=src/assets/icon.png --overwrite --ignore=\"^/node_modules$\" --ignore=\"^/dist$\" --ignore=\"^/FocusMode-win32-x64-.*\" --ignore=\"\\.zip$\" --ignore=\"^/test_extract$\"",
+    "package": "electron-packager . FocusMode-v5 --platform=win32 --arch=x64 --out=dist --icon=src/assets/icon.png --overwrite --ignore=\"^/node_modules$\" --ignore=\"^/dist$\" --ignore=\"\\.zip$\" --ignore=\"^/test_extract$\"",
     "release": "electron-builder --win -p always"
   },
   "devDependencies": {
