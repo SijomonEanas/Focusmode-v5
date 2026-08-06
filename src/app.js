@@ -912,17 +912,32 @@ function renderActivityLog() {
         `;
       }
 
+      let thumbHtml = '';
+      if (appState.tasks && Array.isArray(appState.tasks)) {
+        const matchingTask = appState.tasks.find(t => t.name && (log.message || '').toLowerCase().includes(t.name.toLowerCase()));
+        if (matchingTask) {
+          if (matchingTask.completionImage) {
+            thumbHtml = `<img src="${matchingTask.completionImage}" onclick="openImageViewer('${matchingTask.completionImage}'); event.stopPropagation();" title="Click thumbnail to view full screen" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.25); cursor: pointer; flex-shrink: 0; margin-left: 8px; background: #000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">`;
+          } else if (matchingTask.completionVideo) {
+            thumbHtml = `<div onclick="openTaskDetailsModal('${matchingTask.id}'); event.stopPropagation();" title="Click to view video proof" style="width: 44px; height: 44px; border-radius: 6px; border: 1.5px solid rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-left: 8px; color: #60a5fa; font-size: 18px;">🎥</div>`;
+          }
+        }
+      }
+
       card.className = `premium-history-card ${cardStyleClass}`;
       card.innerHTML = `
         <div class="history-icon-box">
           ${iconSvg}
         </div>
-        <div class="history-card-body">
+        <div class="history-card-body" style="flex: 1; display: flex; flex-direction: column;">
           <div class="history-card-top">
             <span class="history-tag">${typeTag}</span>
             <span class="history-time-stamp">${log.time || ''}</span>
           </div>
-          <div class="history-msg-text">${log.message || ''}</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div class="history-msg-text" style="flex: 1;">${log.message || ''}</div>
+            ${thumbHtml}
+          </div>
           ${metaHtml}
         </div>
       `;
