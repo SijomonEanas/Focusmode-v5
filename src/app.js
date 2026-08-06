@@ -1735,10 +1735,50 @@ function renderSelectedDayTasks() {
             return true;
           });
           
-          if (dayLogs.length === 0) {
-            dropdown.innerHTML = '<div style="opacity: 0.5; padding: 4px 0;">No activity logged for this task on this day.</div>';
-          } else {
-            dropdown.innerHTML = dayLogs.map(l => {
+          let detailsHtml = '';
+
+          // Task Notes
+          if (task.notes) {
+            detailsHtml += `<div style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 8px; font-style: italic; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border-left: 2px solid var(--theme-color);">📝 <strong>Note:</strong> ${task.notes}</div>`;
+          }
+
+          // Subtasks
+          if (task.subtasks && task.subtasks.length > 0) {
+            const subList = task.subtasks.map(st => `<div style="font-size: 0.78rem; color: ${st.completed ? 'var(--text-muted)' : '#e2e8f0'}; text-decoration: ${st.completed ? 'line-through' : 'none'}; display: flex; align-items: center; gap: 6px; margin-top: 2px;"><span>${st.completed ? '✓' : '○'}</span> ${st.name}</div>`).join('');
+            detailsHtml += `<div style="margin-bottom: 8px; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 6px;"><div style="font-size: 0.75rem; font-weight: 700; color: var(--theme-color); margin-bottom: 4px;">Subtasks (${task.subtasks.filter(s=>s.completed).length}/${task.subtasks.length}):</div>${subList}</div>`;
+          }
+
+          // Images, Reflection Notes, Video & Document Proofs
+          if (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument) {
+            let imgHtml = '';
+            if (task.completionImage) {
+              imgHtml = `<img src="${task.completionImage}" onclick="openImageViewer('${task.completionImage}'); event.stopPropagation();" title="Click to enlarge screenshot proof" style="max-height: 140px; width: auto; max-width: 100%; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); margin-top: 6px; display: block; object-fit: contain; background: #000;">`;
+            }
+            let videoHtml = '';
+            if (task.completionVideo) {
+              videoHtml = `<video controls src="${task.completionVideo}" style="max-height: 140px; width: 100%; border-radius: 6px; margin-top: 6px; background: #000; border: 1px solid rgba(59, 130, 246, 0.4);"></video>`;
+            }
+            let docHtml = '';
+            if (task.completionDocument && task.completionDocument.data) {
+              docHtml = `<a href="${task.completionDocument.data}" download="${task.completionDocument.name || 'attachment'}" onclick="event.stopPropagation();" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px; color: #10b981; font-size: 11px; text-decoration: none; margin-top: 6px; font-weight: 600;">📄 ${task.completionDocument.name || 'Download Document'} ⬇️</a>`;
+            }
+            let noteHtml = task.completionNote ? `<div style="font-size: 0.8rem; color: var(--theme-color); font-style: italic; margin-top: 2px; line-height: 1.4;">" ${task.completionNote} "</div>` : '';
+            
+            detailsHtml += `
+              <div class="task-reflection-box" style="margin-bottom: 8px; padding: 8px 10px; background: rgba(255,255,255,0.04); border-left: 3px solid var(--theme-color); border-radius: 6px;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: #fff; margin-bottom: 4px;">💡 Reflection & Proof Attachments:</div>
+                ${noteHtml}
+                ${imgHtml}
+                ${videoHtml}
+                ${docHtml}
+              </div>
+            `;
+          }
+
+          // Activity Logs
+          let logsHtml = '';
+          if (dayLogs.length > 0) {
+            logsHtml = dayLogs.map(l => {
               let timeStr = l.time;
               if (l.startTime && l.stopTime) timeStr = `${l.startTime} - ${l.stopTime}`;
               return `<div style="padding: 4px 0; border-left: 2px solid rgba(255,255,255,0.1); padding-left: 10px; margin-bottom: 6px;">
@@ -1746,8 +1786,12 @@ function renderSelectedDayTasks() {
                 <div>${l.message}</div>
               </div>`;
             }).join('');
+          } else if (!detailsHtml) {
+            logsHtml = '<div style="opacity: 0.5; padding: 4px 0;">No activity logged for this task on this day.</div>';
           }
-          
+
+          dropdown.innerHTML = detailsHtml + logsHtml;
+
           dropdown.classList.remove('hidden');
           dropdown.style.display = 'block';
           icon.style.transform = 'rotate(180deg)';
