@@ -382,14 +382,17 @@ function collectImages(dir, depth = 0) {
 function getUserQuotesDirectories() {
   const dirs = [];
   const exeDir = path.dirname(app.getPath('exe'));
-  const portableQuotesDir = path.join(exeDir, 'user-quotes');
-  dirs.push(portableQuotesDir);
-
-  const cwdQuotesDir = path.join(process.cwd(), 'user-quotes');
-  if (!dirs.includes(cwdQuotesDir)) dirs.push(cwdQuotesDir);
-
-  const appDataQuotesDir = path.join(app.getPath('userData'), 'user-quotes');
-  if (!dirs.includes(appDataQuotesDir)) dirs.push(appDataQuotesDir);
+  
+  [
+    path.join(exeDir, 'screensaver'),
+    path.join(exeDir, 'user-quotes'),
+    path.join(process.cwd(), 'screensaver'),
+    path.join(process.cwd(), 'user-quotes'),
+    path.join(app.getPath('userData'), 'screensaver'),
+    path.join(app.getPath('userData'), 'user-quotes')
+  ].forEach(d => {
+    if (!dirs.includes(d)) dirs.push(d);
+  });
 
   return dirs;
 }
@@ -418,28 +421,28 @@ ipcMain.handle('get-random-quote-image', () => {
       return { source: 'user', data: `data:${mime};base64,${base64}`, name: path.basename(randomPath) };
     }
   } catch (err) {
-    console.error('Error reading user quotes folder:', err);
+    console.error('Error reading user quotes/screensaver folder:', err);
   }
   return { source: 'bundled', index: Math.floor(Math.random() * 3) + 1 };
 });
 
 ipcMain.handle('open-user-quotes-folder', async () => {
   const exeDir = path.dirname(app.getPath('exe'));
-  let targetDir = path.join(exeDir, 'user-quotes');
+  let targetDir = path.join(exeDir, 'screensaver');
   
   try {
     if (!fs.existsSync(targetDir)) {
       try {
         fs.mkdirSync(targetDir, { recursive: true });
       } catch (e) {
-        targetDir = path.join(app.getPath('userData'), 'user-quotes');
+        targetDir = path.join(process.cwd(), 'screensaver');
         if (!fs.existsSync(targetDir)) {
           fs.mkdirSync(targetDir, { recursive: true });
         }
       }
     }
   } catch (err) {
-    targetDir = path.join(app.getPath('userData'), 'user-quotes');
+    targetDir = path.join(app.getPath('userData'), 'screensaver');
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
