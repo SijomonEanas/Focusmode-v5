@@ -148,7 +148,9 @@ const quotes = [
   { text: "Habits are the compound interest of self-improvement.", author: "James Clear" },
   { text: "Simplicity boils down to two steps: Identify the essential. Eliminate the rest.", author: "Leo Babauta" },
   { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
-  { text: "What we fear doing most is usually what we most need to do.", author: "Ralph Waldo Emerson" }
+  { text: "What we fear doing most is usually what we most need to do.", author: "Ralph Waldo Emerson" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "The successful warrior is the average man, with laser-like focus.", author: "Bruce Lee" }
 ];
 
 // DOM Elements
@@ -1104,7 +1106,7 @@ async function initApp() { try {
     playMusic();
   }
 
-  rotateQuote();
+  startQuoteRotation();
   syncSettingsToUI();
   setupEventListeners();
   renderAll();
@@ -2877,19 +2879,48 @@ async function loadRandomQuoteImage() {
   }, 100);
 }
 
-// --- Quotes Rotator ---
+// --- Quotes Rotator & Auto-Rotation ---
+let currentQuoteIndex = -1;
+let quoteRotationInterval = null;
+
 function rotateQuote() {
-  const index = Math.floor(Math.random() * quotes.length);
-  const selectedQuote = quotes[index];
+  if (quotes.length === 0) return;
+  let newIndex;
+  do {
+    newIndex = Math.floor(Math.random() * quotes.length);
+  } while (quotes.length > 1 && newIndex === currentQuoteIndex);
+  
+  currentQuoteIndex = newIndex;
+  const selectedQuote = quotes[currentQuoteIndex];
   
   if (elDashboardQuoteText && elDashboardQuoteAuthor) {
-    elDashboardQuoteText.textContent = selectedQuote.text;
-    elDashboardQuoteAuthor.textContent = `— ${selectedQuote.author}`;
+    elDashboardQuoteText.style.transition = 'opacity 0.4s ease';
+    elDashboardQuoteAuthor.style.transition = 'opacity 0.4s ease';
+    elDashboardQuoteText.style.opacity = '0';
+    elDashboardQuoteAuthor.style.opacity = '0';
+    
+    setTimeout(() => {
+      elDashboardQuoteText.textContent = selectedQuote.text;
+      elDashboardQuoteAuthor.textContent = `— ${selectedQuote.author}`;
+      elDashboardQuoteText.style.opacity = '1';
+      elDashboardQuoteAuthor.style.opacity = '1';
+    }, 400);
   }
   if (elMiniQuoteText) {
     elMiniQuoteText.textContent = `"${selectedQuote.text}" — ${selectedQuote.author}`;
   }
 }
+
+function startQuoteRotation() {
+  rotateQuote();
+  if (quoteRotationInterval) clearInterval(quoteRotationInterval);
+  quoteRotationInterval = setInterval(() => {
+    rotateQuote();
+  }, 12000);
+}
+
+window.rotateQuote = rotateQuote;
+window.startQuoteRotation = startQuoteRotation;
 
 // --- View Panel Toggles (Tasks Sidebar & Pop-up Calendar Modal) ---
 const elBtnViewDashboard = document.getElementById('btn-view-dashboard');
