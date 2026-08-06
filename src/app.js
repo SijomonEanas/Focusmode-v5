@@ -766,16 +766,42 @@ function renderActivityLog() {
     const targetYesterdayMs = new Date().getTime() - (1 * 24 * 3600 * 1000);
     const yesterdayStr = getFocusDateString(resetHour, targetYesterdayMs);
 
+    let allLogs = [...(appState.activityLog || [])];
+
+    if (appState.tasks && Array.isArray(appState.tasks)) {
+      appState.tasks.forEach(task => {
+        if (task.completed && (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument)) {
+          const compDate = task.completedAt ? new Date(task.completedAt) : new Date();
+          const compDateStr = getFocusDateString(resetHour, compDate.getTime());
+          const compTimeStr = compDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const noteText = task.completionNote ? `"${task.completionNote}"` : 'Proof attachment added';
+          const refMsg = `Reflection for task "${task.name}": ${noteText}`;
+          
+          const alreadyLogged = allLogs.some(l => l.type === 'reflection' && (l.message === refMsg || (l.message && l.message.includes(task.name))));
+          if (!alreadyLogged) {
+            allLogs.push({
+              id: 'task_ref_' + task.id,
+              type: 'reflection',
+              message: refMsg,
+              date: compDateStr,
+              time: compTimeStr,
+              timestamp: compDate.getTime()
+            });
+          }
+        }
+      });
+    }
+
     let filteredLogs = [];
 
     if (currentActivityViewMode === 'all') {
-      filteredLogs = [...(appState.activityLog || [])];
+      filteredLogs = [...allLogs];
     } else {
       let targetDateStr = currentActivityViewMode;
       if (targetDateStr === '0') targetDateStr = todayFocusStr;
       if (targetDateStr === '1') targetDateStr = yesterdayStr;
 
-      filteredLogs = (appState.activityLog || []).filter(log => {
+      filteredLogs = allLogs.filter(log => {
         if (log.date === targetDateStr) return true;
         const logTs = log.timestamp || (log.date ? new Date(log.date).getTime() : null);
         if (!logTs) return false;
@@ -4102,6 +4128,10 @@ function finalizeTaskCompletion(noteText, imageData, videoData, docData) {
     if (videoData !== undefined) task.completionVideo = videoData;
     if (docData !== undefined) task.completionDocument = docData;
     logActivity('task', `Completed task: ${task.name}`);
+    if (noteText || imageData || videoData || docData) {
+      const summary = noteText ? `"${noteText}"` : 'Attachment proof added';
+      logActivity('reflection', `Reflection for task "${task.name}": ${summary}`);
+    }
     playChime('taskComplete');
     if (typeof addXP === 'function') addXP(50);
     renderAll();
