@@ -547,18 +547,26 @@ function performDayRollover(oldDateStr, newDateStr) {
   
   // Restart tasks by day base
   appState.tasks.forEach(t => {
-    // Archive progress before reset
+    // Archive progress and reflection notes/attachments before reset
     if (!t.history) t.history = {};
     const archiveDate = oldDateStr || new Date().toDateString();
     t.history[archiveDate] = {
       completed: t.completed || false,
       qty: t.currentQty || 0,
-      duration: t.currentDuration || 0
+      duration: t.currentDuration || 0,
+      completionNote: t.completionNote || '',
+      completionImage: t.completionImage || null,
+      completionVideo: t.completionVideo || null,
+      completionDocument: t.completionDocument || null
     };
 
     t.completed = false;
     t.currentQty = 0;
     t.currentDuration = 0;
+    t.completionNote = '';
+    t.completionImage = null;
+    t.completionVideo = null;
+    t.completionDocument = null;
     if (t.subtasks) {
       t.subtasks.forEach(st => st.completed = false);
     }
