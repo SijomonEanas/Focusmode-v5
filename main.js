@@ -202,6 +202,14 @@ if (!gotTheLock) {
     globalShortcut.register('Alt+B', () => mainWindow?.webContents.send('shortcut-break'));
     globalShortcut.register('Alt+S', () => mainWindow?.webContents.send('shortcut-switch'));
 
+    // Register Reload Shortcuts for instant updates
+    globalShortcut.register('CommandOrControl+R', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
+    });
+    globalShortcut.register('F5', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
+    });
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createMainWindow();
