@@ -1072,6 +1072,31 @@ async function initApp() { try {
     const resetHour = appState.settings.dayResetHour;
     const focusDateStr = getFocusDateString(resetHour);
     
+    // Clean up stale reflection notes and proof attachments from previous days on startup
+    if (appState.tasks && Array.isArray(appState.tasks)) {
+      appState.tasks.forEach(t => {
+        const taskCompFocusStr = t.completedAt ? getFocusDateString(resetHour, new Date(t.completedAt).getTime()) : null;
+        if (taskCompFocusStr && taskCompFocusStr !== focusDateStr && !t.completed) {
+          if (t.completionNote || t.completionImage || t.completionVideo || t.completionDocument) {
+            if (!t.history) t.history = {};
+            if (!t.history[taskCompFocusStr]) {
+              t.history[taskCompFocusStr] = {
+                completed: true,
+                completionNote: t.completionNote || '',
+                completionImage: t.completionImage || null,
+                completionVideo: t.completionVideo || null,
+                completionDocument: t.completionDocument || null
+              };
+            }
+            t.completionNote = '';
+            t.completionImage = null;
+            t.completionVideo = null;
+            t.completionDocument = null;
+          }
+        }
+      });
+    }
+
     isAppCloseLogged = false;
     logActivity('system', 'App started / Session started');
 
@@ -3476,40 +3501,60 @@ function timerFinished() {
       toggleMiniMode(false);
     }
 
-    // Always trigger popup modal with extension & break options!
-    const modal = document.getElementById('task-target-modal');
-    const msg = document.getElementById('task-target-modal-msg');
     const task = activeTaskId ? appState.tasks.find(t => t.id === activeTaskId) : null;
+    const todayStr = new Date().toDateString();
+    const targetDur = task ? (typeof getEffectiveTaskTarget === 'function' ? getEffectiveTaskTarget(task, todayStr) : task.targetDuration) : 0;
     
-    if (msg) {
-      if (task) {
-        msg.textContent = `🎯 Focus session / Goal complete for "${task.name}"! Need more time, ready for a break, or mark complete?`;
-      } else {
-        msg.textContent = `⏰ Focus session complete! Need more time or ready for a break?`;
+    // Check if task target duration is not yet reached (e.g. 30 mins done out of 2 hour target)
+    const isDurationTaskIncomplete = task && task.type === 'duration' && targetDur > 0 && (task.currentDuration < targetDur);
+
+    if (isDurationTaskIncomplete) {
+      // Do not interrupt with "Goal complete / Extend task" modal yet. Show break options & toast instead!
+      const breakModal = document.getElementById('break-picker-modal');
+      if (breakModal) breakModal.classList.remove('hidden');
+
+      const completedMins = Math.floor(task.currentDuration / 60);
+      const targetMins = Math.floor(targetDur / 60);
+      
+      if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
+        window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: `Completed session (${completedMins}m / ${targetMins}m goal). Take a break!` });
       }
-    }
-
-    const finishBtn = document.getElementById('btn-finish-target-task');
-    if (finishBtn) {
-      const newFinishBtn = finishBtn.cloneNode(true);
-      finishBtn.parentNode.replaceChild(newFinishBtn, finishBtn);
-      newFinishBtn.addEventListener('click', () => {
-        if (modal) modal.classList.add('hidden');
-        const targetId = (task && task.id) || targetReachedTaskId || activeTaskId;
-        if (targetId) {
-          completeTask(targetId);
+      showCustomToast('Focus Session Complete!', `Progress: ${completedMins}m / ${targetMins}m completed. Take a break!`);
+    } else {
+      // Trigger popup modal with extension & break options when target reached or general session!
+      const modal = document.getElementById('task-target-modal');
+      const msg = document.getElementById('task-target-modal-msg');
+      
+      if (msg) {
+        if (task) {
+          msg.textContent = `🎯 Focus session / Goal complete for "${task.name}"! Need more time, ready for a break, or mark complete?`;
         } else {
-          showCustomToast('Great job!', 'Completed focus session.');
+          msg.textContent = `⏰ Focus session complete! Need more time or ready for a break?`;
         }
-      });
-    }
+      }
 
-    if (modal) modal.classList.remove('hidden');
+      const finishBtn = document.getElementById('btn-finish-target-task');
+      if (finishBtn) {
+        const newFinishBtn = finishBtn.cloneNode(true);
+        finishBtn.parentNode.replaceChild(newFinishBtn, finishBtn);
+        newFinishBtn.addEventListener('click', () => {
+          if (modal) modal.classList.add('hidden');
+          const targetId = (task && task.id) || targetReachedTaskId || activeTaskId;
+          if (targetId) {
+            completeTask(targetId);
+          } else {
+            showCustomToast('Great job!', 'Completed focus session.');
+          }
+        });
+      }
 
-    if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
-      window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: 'Earned 200 XP. Choose to extend or take a break.' });
+      if (modal) modal.classList.remove('hidden');
+
+      if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
+        window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: 'Earned 200 XP. Choose to extend or take a break.' });
+      }
+      showCustomToast('Focus Session Complete!', 'Earned 200 XP. Choose to extend time or take a break.');
     }
-    showCustomToast('Focus Session Complete!', 'Earned 200 XP. Choose to extend time or take a break.');
   } else {
     // Break finished! Resume focus timer automatically!
     logActivity('timer', 'Completed a Break');
@@ -4262,27 +4307,54 @@ function openCompletionModal(taskId) {
   if (docFileInput) docFileInput.value = '';
   if (btnClearDoc) btnClearDoc.classList.add('hidden');
 
-  // Pre-fill existing task completion data if available
+  // Pre-fill existing task completion data ONLY if completed today!
   const task = appState.tasks.find(t => t.id === taskId);
   if (task) {
-    if (task.completionNote && inputNote) inputNote.value = task.completionNote;
-    if (task.completionImage) {
-      currentCompletionImageData = task.completionImage;
-      if (imgPreview) imgPreview.src = task.completionImage;
-      if (imgPreviewContainer) imgPreviewContainer.classList.remove('hidden');
-      if (btnClearImg) btnClearImg.classList.remove('hidden');
-    }
-    if (task.completionVideo) {
-      currentCompletionVideoData = task.completionVideo;
-      if (videoPreview) videoPreview.src = task.completionVideo;
-      if (videoPreviewContainer) videoPreviewContainer.classList.remove('hidden');
-      if (btnClearVideo) btnClearVideo.classList.remove('hidden');
-    }
-    if (task.completionDocument) {
-      currentCompletionDocData = task.completionDocument;
-      if (docNameSpan) docNameSpan.textContent = task.completionDocument.name || 'Document';
-      if (docPreviewContainer) docPreviewContainer.classList.remove('hidden');
-      if (btnClearDoc) btnClearDoc.classList.remove('hidden');
+    const resetHour = (appState && appState.settings && appState.settings.dayResetHour) || 5;
+    const todayFocusStr = getFocusDateString(resetHour);
+    const taskCompFocusStr = task.completedAt ? getFocusDateString(resetHour, new Date(task.completedAt).getTime()) : null;
+    const isCompletedToday = taskCompFocusStr === todayFocusStr;
+
+    if (!isCompletedToday && !task.completed) {
+      // Reflection from previous day - archive into history if missing and reset active fields for today
+      if (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument) {
+        if (!task.history) task.history = {};
+        const prevDateStr = taskCompFocusStr || new Date().toDateString();
+        if (!task.history[prevDateStr]) {
+          task.history[prevDateStr] = {
+            completed: true,
+            completionNote: task.completionNote || '',
+            completionImage: task.completionImage || null,
+            completionVideo: task.completionVideo || null,
+            completionDocument: task.completionDocument || null
+          };
+        }
+        task.completionNote = '';
+        task.completionImage = null;
+        task.completionVideo = null;
+        task.completionDocument = null;
+        saveAppState();
+      }
+    } else if (isCompletedToday) {
+      if (task.completionNote && inputNote) inputNote.value = task.completionNote;
+      if (task.completionImage) {
+        currentCompletionImageData = task.completionImage;
+        if (imgPreview) imgPreview.src = task.completionImage;
+        if (imgPreviewContainer) imgPreviewContainer.classList.remove('hidden');
+        if (btnClearImg) btnClearImg.classList.remove('hidden');
+      }
+      if (task.completionVideo) {
+        currentCompletionVideoData = task.completionVideo;
+        if (videoPreview) videoPreview.src = task.completionVideo;
+        if (videoPreviewContainer) videoPreviewContainer.classList.remove('hidden');
+        if (btnClearVideo) btnClearVideo.classList.remove('hidden');
+      }
+      if (task.completionDocument) {
+        currentCompletionDocData = task.completionDocument;
+        if (docNameSpan) docNameSpan.textContent = task.completionDocument.name || 'Document';
+        if (docPreviewContainer) docPreviewContainer.classList.remove('hidden');
+        if (btnClearDoc) btnClearDoc.classList.remove('hidden');
+      }
     }
   }
 
