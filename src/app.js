@@ -3502,32 +3502,28 @@ function timerFinished() {
     }
 
     const task = activeTaskId ? appState.tasks.find(t => t.id === activeTaskId) : null;
-    const todayStr = new Date().toDateString();
-    const targetDur = task ? (typeof getEffectiveTaskTarget === 'function' ? getEffectiveTaskTarget(task, todayStr) : task.targetDuration) : 0;
     
-    // Check if task target duration is not yet reached (e.g. 30 mins done out of 2 hour target)
-    const isDurationTaskIncomplete = task && task.type === 'duration' && targetDur > 0 && (task.currentDuration < targetDur);
+    // Check if active task is in progress (not completed)
+    const isTaskIncomplete = task && !task.completed;
 
-    if (isDurationTaskIncomplete) {
-      // Do not interrupt with "Goal complete / Extend task" modal yet. Show break options & toast instead!
+    if (isTaskIncomplete) {
+      // Do NOT trigger "Goal complete / Extend task" modal while working on an incomplete task!
+      // Show break picker modal and toast notification instead.
       const breakModal = document.getElementById('break-picker-modal');
       if (breakModal) breakModal.classList.remove('hidden');
 
-      const completedMins = Math.floor(task.currentDuration / 60);
-      const targetMins = Math.floor(targetDur / 60);
-      
       if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
-        window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: `Completed session (${completedMins}m / ${targetMins}m goal). Take a break!` });
+        window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: `Completed session on "${task.name}". Take a break or resume!` });
       }
-      showCustomToast('Focus Session Complete!', `Progress: ${completedMins}m / ${targetMins}m completed. Take a break!`);
+      showCustomToast('Focus Session Complete!', `Focus session done for "${task.name}". Take a break or resume focus.`);
     } else {
-      // Trigger popup modal with extension & break options when target reached or general session!
+      // Trigger popup modal ONLY when no active task or task target explicitly completed!
       const modal = document.getElementById('task-target-modal');
       const msg = document.getElementById('task-target-modal-msg');
       
       if (msg) {
         if (task) {
-          msg.textContent = `🎯 Focus session / Goal complete for "${task.name}"! Need more time, ready for a break, or mark complete?`;
+          msg.textContent = `🎯 Task Goal Complete for "${task.name}"! Mark complete & reflect or extend target?`;
         } else {
           msg.textContent = `⏰ Focus session complete! Need more time or ready for a break?`;
         }
