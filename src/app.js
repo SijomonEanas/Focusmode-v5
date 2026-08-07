@@ -3507,15 +3507,11 @@ function timerFinished() {
     const isTaskIncomplete = task && !task.completed;
 
     if (isTaskIncomplete) {
-      // Do NOT trigger "Goal complete / Extend task" modal while working on an incomplete task!
-      // Show break picker modal and toast notification instead.
-      const breakModal = document.getElementById('break-picker-modal');
-      if (breakModal) breakModal.classList.remove('hidden');
-
+      // No popups or auto break modals! Just notify cleanly via chime, desktop notification & toast.
       if (appState.settings.notifications && window.electronAPI && window.electronAPI.sendNotification) {
-        window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: `Completed session on "${task.name}". Take a break or resume!` });
+        window.electronAPI.sendNotification({ title: 'Focus Session Complete!', body: `Completed focus session on "${task.name}". Earned 200 XP!` });
       }
-      showCustomToast('Focus Session Complete!', `Focus session done for "${task.name}". Take a break or resume focus.`);
+      showCustomToast('Focus Session Complete!', `Great focus session on "${task.name}"! Earned 200 XP.`);
     } else {
       // Trigger popup modal ONLY when no active task or task target explicitly completed!
       const modal = document.getElementById('task-target-modal');
