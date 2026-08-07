@@ -2384,7 +2384,7 @@ function renderTasks() { try {
     ` : '';
 
     const editReflectionBtnHtml = task.completed ? `
-      <button title="Edit Reflection & Attachments" onclick="openCompletionModal('${task.id}'); event.stopPropagation();" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); padding: 3px 8px; border-radius: 6px; color: var(--theme-color); cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+      <button title="Edit Reflection & Attachments" onclick="openCompletionModal('${task.id}', true); event.stopPropagation();" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); padding: 3px 8px; border-radius: 6px; color: var(--theme-color); cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
         📝 Reflection
       </button>
     ` : '';
@@ -4251,7 +4251,7 @@ let currentCompletionImageData = null;
 let currentCompletionVideoData = null;
 let currentCompletionDocData = null;
 
-function openCompletionModal(taskId) {
+function openCompletionModal(taskId, isEditMode = false) {
   pendingCompletionTaskId = taskId;
   currentCompletionImageData = null;
   currentCompletionVideoData = null;
@@ -4281,7 +4281,7 @@ function openCompletionModal(taskId) {
   const docFileInput = document.getElementById('completion-doc-file');
   const btnClearDoc = document.getElementById('btn-clear-completion-doc');
 
-  // Reset fields
+  // Reset fields to completely blank
   if (inputNote) inputNote.value = '';
   
   if (imgPreviewContainer) imgPreviewContainer.classList.add('hidden');
@@ -4299,35 +4299,10 @@ function openCompletionModal(taskId) {
   if (docFileInput) docFileInput.value = '';
   if (btnClearDoc) btnClearDoc.classList.add('hidden');
 
-  // Pre-fill existing task completion data ONLY if task is currently completed and completed today!
   const task = appState.tasks.find(t => t.id === taskId);
   if (task) {
-    const resetHour = (appState && appState.settings && appState.settings.dayResetHour) || 5;
-    const todayFocusStr = getFocusDateString(resetHour);
-    const taskCompFocusStr = task.completedAt ? getFocusDateString(resetHour, new Date(task.completedAt).getTime()) : null;
-
-    if (!task.completed) {
-      // Task is currently incomplete (marking complete now) - archive any previous reflection and reset active fields
-      if (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument) {
-        if (!task.history) task.history = {};
-        const prevDateStr = taskCompFocusStr || new Date().toDateString();
-        if (!task.history[prevDateStr]) {
-          task.history[prevDateStr] = {
-            completed: true,
-            completionNote: task.completionNote || '',
-            completionImage: task.completionImage || null,
-            completionVideo: task.completionVideo || null,
-            completionDocument: task.completionDocument || null
-          };
-        }
-        task.completionNote = '';
-        task.completionImage = null;
-        task.completionVideo = null;
-        task.completionDocument = null;
-        saveAppState();
-      }
-    } else if (task.completed && taskCompFocusStr === todayFocusStr) {
-      // Task is ALREADY completed today - load today's saved reflection for editing
+    if (isEditMode && task.completed) {
+      // User explicitly clicked "Edit Reflection" on an already completed task item - load saved reflection
       if (task.completionNote && inputNote) inputNote.value = task.completionNote;
       if (task.completionImage) {
         currentCompletionImageData = task.completionImage;
@@ -4346,6 +4321,27 @@ function openCompletionModal(taskId) {
         if (docNameSpan) docNameSpan.textContent = task.completionDocument.name || 'Document';
         if (docPreviewContainer) docPreviewContainer.classList.remove('hidden');
         if (btnClearDoc) btnClearDoc.classList.remove('hidden');
+      }
+    } else {
+      // Completing task for new session - archive any previous reflection into history & reset active fields
+      if (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument) {
+        if (!task.history) task.history = {};
+        const resetHour = (appState && appState.settings && appState.settings.dayResetHour) || 5;
+        const prevDateStr = task.completedAt ? getFocusDateString(resetHour, new Date(task.completedAt).getTime()) : new Date().toDateString();
+        if (!task.history[prevDateStr]) {
+          task.history[prevDateStr] = {
+            completed: true,
+            completionNote: task.completionNote || '',
+            completionImage: task.completionImage || null,
+            completionVideo: task.completionVideo || null,
+            completionDocument: task.completionDocument || null
+          };
+        }
+        task.completionNote = '';
+        task.completionImage = null;
+        task.completionVideo = null;
+        task.completionDocument = null;
+        saveAppState();
       }
     }
   }
