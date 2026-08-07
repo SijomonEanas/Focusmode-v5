@@ -4299,16 +4299,15 @@ function openCompletionModal(taskId) {
   if (docFileInput) docFileInput.value = '';
   if (btnClearDoc) btnClearDoc.classList.add('hidden');
 
-  // Pre-fill existing task completion data ONLY if completed today!
+  // Pre-fill existing task completion data ONLY if task is currently completed and completed today!
   const task = appState.tasks.find(t => t.id === taskId);
   if (task) {
     const resetHour = (appState && appState.settings && appState.settings.dayResetHour) || 5;
     const todayFocusStr = getFocusDateString(resetHour);
     const taskCompFocusStr = task.completedAt ? getFocusDateString(resetHour, new Date(task.completedAt).getTime()) : null;
-    const isCompletedToday = taskCompFocusStr === todayFocusStr;
 
-    if (!isCompletedToday && !task.completed) {
-      // Reflection from previous day - archive into history if missing and reset active fields for today
+    if (!task.completed) {
+      // Task is currently incomplete (marking complete now) - archive any previous reflection and reset active fields
       if (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument) {
         if (!task.history) task.history = {};
         const prevDateStr = taskCompFocusStr || new Date().toDateString();
@@ -4327,7 +4326,8 @@ function openCompletionModal(taskId) {
         task.completionDocument = null;
         saveAppState();
       }
-    } else if (isCompletedToday) {
+    } else if (task.completed && taskCompFocusStr === todayFocusStr) {
+      // Task is ALREADY completed today - load today's saved reflection for editing
       if (task.completionNote && inputNote) inputNote.value = task.completionNote;
       if (task.completionImage) {
         currentCompletionImageData = task.completionImage;
