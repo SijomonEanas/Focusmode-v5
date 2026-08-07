@@ -3598,6 +3598,29 @@ function completeTask(id) {
   const task = appState.tasks.find(t => t.id === id);
   if (!task) return;
   
+  // Check if completion was recorded today
+  const isCompletedToday = task.completedAt && (new Date(task.completedAt).toDateString() === new Date().toDateString());
+  if (!isCompletedToday) {
+    // Archive previous reflection into task history before clearing active entry for today
+    if (task.completionNote || task.completionImage || task.completionVideo || task.completionDocument) {
+      if (!task.history) task.history = {};
+      const prevDate = task.completedAt ? new Date(task.completedAt).toDateString() : new Date().toDateString();
+      if (!task.history[prevDate]) {
+        task.history[prevDate] = {
+          completed: true,
+          completionNote: task.completionNote || '',
+          completionImage: task.completionImage || null,
+          completionVideo: task.completionVideo || null,
+          completionDocument: task.completionDocument || null
+        };
+      }
+    }
+    task.completionNote = '';
+    task.completionImage = null;
+    task.completionVideo = null;
+    task.completionDocument = null;
+  }
+
   // Set task completed immediately so it moves to Completed section
   task.completed = true;
   task.completedAt = new Date().toISOString();
@@ -3642,6 +3665,10 @@ function uncompleteTask(id) {
   if (!task) return;
   
   task.completed = false;
+  task.completionNote = '';
+  task.completionImage = null;
+  task.completionVideo = null;
+  task.completionDocument = null;
   playChime('click');
   
   renderTasks();
